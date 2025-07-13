@@ -28,7 +28,7 @@ export function BahanCard({
   }
 
   return (
-    <div className="relative w-full max-w-md rounded-lg">
+    <div className="relative w-full max-w-md rounded-lg shadow-md">
       {/* Green background */}
       <div className="bg-green-500 h-20 rounded-lg w-full"></div>
 
