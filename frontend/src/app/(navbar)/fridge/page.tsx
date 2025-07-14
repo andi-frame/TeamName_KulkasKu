@@ -1,8 +1,10 @@
 import { FoodCard } from "@/components/food-card";
+import { ExpiredGroup } from "./expired-group";
 
 export default function Fridge() {
   return (
     <div className="">
+      <ExpiredGroup/>
       <FoodCard
         foodName="Bayam"
         amount="2 ikat"
