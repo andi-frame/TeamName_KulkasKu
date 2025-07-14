@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,11 +34,43 @@ func NewAuthService(cfg config.Config) *AuthService {
 	}
 }
 
+// Me Handler
+func (authService *AuthService) MeHandler(c *gin.Context) {
+	tokenStr, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not found"})
+		return
+	}
+
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
+		return []byte(authService.jwtSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":    claims["id"],
+		"email": claims["email"],
+		"name":  claims["name"],
+	})
+}
+
+// Login Handler
 func (authService *AuthService) LoginHandler(c *gin.Context) {
 	url := authService.oauthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
+// Callback Handler
 func (authService *AuthService) CallbackHandler(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -67,12 +98,6 @@ func (authService *AuthService) CallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// Check whitelist
-	if !isEmailAllowed(userInfo.Email) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "user not allowed"})
-		return
-	}
-
 	// Update user account if exist, insert if not exist
 	user, err := repository.UpsertUserAccount(userInfo)
 	if err != nil {
@@ -87,9 +112,22 @@ func (authService *AuthService) CallbackHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": tokenStr})
+	// Set JWT as HTTP-only cookie
+	c.SetCookie(
+		"token",
+		tokenStr,
+		3600*24,
+		"/",
+		"localhost", // TODO: adjust in prod
+		false,       // TODO: adjust in prod,secure: true if using HTTPS
+		true,        // httpOnly
+	)
+
+	// TODO: adjust in prod
+	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/")
 }
 
+// Logout Handler
 func (authService *AuthService) LogoutHandler(c *gin.Context) {
 	// Just confirmation, nothing changed in the db because this is stateless
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
@@ -100,13 +138,9 @@ func (a *AuthService) createJWT(user *schema.User) (string, error) {
 	claims := jwt.MapClaims{
 		"id":    user.ID,
 		"email": user.Email,
+		"name":  user.Name,
 		"exp":   time.Now().Add(24 * time.Hour).Unix(), // 1 Day // TODO: move to .env
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(a.jwtSecret))
-}
-
-func isEmailAllowed(email string) bool {
-	const allowedDomain = "@std.stei.itb.ac.id"
-	return strings.HasSuffix(email, allowedDomain)
 }
