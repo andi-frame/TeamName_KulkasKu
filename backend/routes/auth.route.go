@@ -10,6 +10,7 @@ func AuthRoute(r *gin.Engine, cfg config.Config) {
 	authRoutes := r.Group("/auth")
 
 	authService := controller.NewAuthService(cfg)
+	authRoutes.GET("/me", authService.MeHandler)
 	authRoutes.GET("/login", authService.LoginHandler)
 	authRoutes.GET("/callback", authService.CallbackHandler)
 }
