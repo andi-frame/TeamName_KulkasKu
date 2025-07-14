@@ -2,29 +2,29 @@
 import { ChevronRight } from "lucide-react"
 import { LeafIcon } from "lucide-react"
 
-interface BahanCardProps {
-	NamaBahan: string,
-	jumlah: string,			// jumlah + satuannya
-	tanggalAwal: Date,
-	tanggalKedaluwarsa: Date,
+interface FoodCardProps {
+	foodName: string,
+	amount: string,			// jumlah + satuannya
+	createdAt: Date,
+	expiredAt: Date,
 }
 
-export function BahanCard({
-  NamaBahan,
-  jumlah,
-  tanggalAwal,
-  tanggalKedaluwarsa,
-}: BahanCardProps) {
-  function formatTanggal() {
+export function FoodCard({
+  foodName,
+  amount,
+  createdAt,
+  expiredAt,
+}: FoodCardProps) {
+  function formattedDate() {
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
       month: "long",
       year: "numeric",
-    }).format(tanggalAwal);
+    }).format(createdAt);
   }
 
-  function sisaHari() {
-	return Math.ceil((tanggalKedaluwarsa.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  function daysLeft() {
+	  return Math.ceil((expiredAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   }
 
   return (
@@ -40,13 +40,13 @@ export function BahanCard({
               <LeafIcon size={18}/>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium">{NamaBahan}</div>
-              <div className="text-[10px]">dari {formatTanggal()}</div>
-              <div className="text-[10px]">kedaluwarsa dalam {sisaHari()} hari</div>
+              <div className="text-base font-medium">{foodName}</div>
+              <div className="text-[10px]">dari {formattedDate()}</div>
+              <div className="text-[10px]">kedaluwarsa dalam {daysLeft()} hari</div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-5">
-            <div className="text-black text-xs">{jumlah}</div>
+            <div className="text-black text-xs">{amount}</div>
             <div className="flex items-center gap-0.5">
               <div className="text-black text-[10px] ">detail</div>
               <div className="w-5 h-4 relative">
