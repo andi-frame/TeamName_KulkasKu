@@ -1,6 +1,8 @@
 import { MenuBar } from "./menu-bar"
-import { Search } from "lucide-react"
-import { ArrowDownWideNarrow } from "lucide-react"
+import { 
+    Search, 
+    ArrowDownWideNarrow 
+} from "lucide-react"
 
 export function Header() {
     return (

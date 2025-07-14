@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from "react";
+import { foodCategories } from "@/types/foodCategory";
+import { useMenuBarOption } from "@/store/useMenuBar";
 
 export function MenuBar() {
-  const items = ["Semua", "Sayuran", "Daging", "Bumbu"]; // bisa diubah tergantung nanti
-  const [selected, setSelected] = useState("Semua");
+  const items = foodCategories;
+
+  const selected = useMenuBarOption((menu) => menu.selected);
+  const setSelected = useMenuBarOption((menu) => menu.setSelected);
 
   return (
     <div className="flex h-11 justify-start items-center">
