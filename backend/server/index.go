@@ -7,11 +7,10 @@ import (
 	"github.com/andi-frame/TeamName_KulkasKu/backend/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	godotenv.Load()
+
 	cfg := config.LoadConfig()
 
 	r := gin.Default()
