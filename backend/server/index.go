@@ -30,6 +30,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Routes
 	routes.AuthRoute(r, cfg)
+	routes.PredictionRoute(r, cfg)
 
 	return r
 }
