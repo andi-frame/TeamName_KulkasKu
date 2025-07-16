@@ -21,6 +21,11 @@ func Init() {
 
 	err = DB.AutoMigrate(
 		&schema.User{},
+		&schema.Item{},
+		&schema.Recipe{},
+		&schema.RecipeStep{},
+		&schema.Ingredient{},
+		&schema.RecipeIngredient{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate:", err)
