@@ -79,6 +79,9 @@ type CombinationResult struct {
 const (
 	MaxConcurrentWorkers = 10
 	APITimeout           = 10 * time.Second
+	MaxRecipesPerCombo   = 10 // Maximum recipes to consider per combination
+	GlobalRecipeLimit    = 10 // Fixed number of best recipes to return globally
+
 )
 
 func GetAllOptimalItems(page int, limit int, userID string) ([]ItemCombination, error) {
@@ -89,10 +92,9 @@ func GetAllOptimalItems(page int, limit int, userID string) ([]ItemCombination, 
 
 	uniqueItems := getUniqueItems(items)
 
-	// Generate combinations from size 1 to all items
-	// Always include empty combination for default "resep" search
+	// Generate combinations
 	var combinations [][]schema.Item
-	combinations = append(combinations, []schema.Item{}) // Empty combination for default search
+	combinations = append(combinations, []schema.Item{}) // Empty combination
 
 	if len(uniqueItems) > 0 {
 		itemCombinations := generateCombinations(uniqueItems, 1, len(uniqueItems))
@@ -102,40 +104,30 @@ func GetAllOptimalItems(page int, limit int, userID string) ([]ItemCombination, 
 	// Process combinations concurrently
 	scoredCombinations := processCombinationsConcurrently(combinations)
 
-	// Filter out failed combinations and log for debugging
-	var validCombinations []ItemCombination
+	// Flatten all recipes from all combinations
+	var allRecipes []ItemCombination
 	for _, combo := range scoredCombinations {
 		if combo.BestRecipe.ID != "" { // Valid recipe found
-			validCombinations = append(validCombinations, combo)
+			allRecipes = append(allRecipes, combo)
 		}
 	}
 
-	// Sort by score (DESC)
-	sort.Slice(validCombinations, func(i, j int) bool {
-		return validCombinations[i].Score > validCombinations[j].Score
+	// Sort ALL recipes by global score (DESC)
+	sort.Slice(allRecipes, func(i, j int) bool {
+		return allRecipes[i].Score > allRecipes[j].Score
 	})
 
-	// Apply pagination
-	start := (page - 1) * limit
-	end := start + limit
-
-	if start >= len(validCombinations) {
-		return []ItemCombination{}, nil
+	// Return top N globally
+	if len(allRecipes) > GlobalRecipeLimit {
+		return allRecipes[:GlobalRecipeLimit], nil
 	}
-
-	if end > len(validCombinations) {
-		end = len(validCombinations)
-	}
-
-	return validCombinations[start:end], nil
+	return allRecipes, nil
 }
 
 func processCombinationsConcurrently(combinations [][]schema.Item) []ItemCombination {
-	// Create channels for communication
 	jobs := make(chan []schema.Item, len(combinations))
-	results := make(chan CombinationResult, len(combinations))
+	results := make(chan CombinationResult, len(combinations)*MaxRecipesPerCombo) // Larger buffer
 
-	// Start worker goroutines
 	var wg sync.WaitGroup
 	numWorkers := min(len(combinations), MaxConcurrentWorkers)
 
@@ -144,14 +136,20 @@ func processCombinationsConcurrently(combinations [][]schema.Item) []ItemCombina
 		go func() {
 			defer wg.Done()
 			for combo := range jobs {
-				result := CombinationResult{}
-				result.Combination, result.Error = scoreCombination(combo)
-				results <- result
+				// Get multiple recipes per combination
+				recipes, err := scoreCombinationMulti(combo)
+				if err != nil {
+					results <- CombinationResult{Error: err}
+					continue
+				}
+
+				for _, recipe := range recipes {
+					results <- CombinationResult{Combination: recipe}
+				}
 			}
 		}()
 	}
 
-	// Send jobs to workers
 	go func() {
 		for _, combo := range combinations {
 			jobs <- combo
@@ -159,23 +157,90 @@ func processCombinationsConcurrently(combinations [][]schema.Item) []ItemCombina
 		close(jobs)
 	}()
 
-	// Close results channel when all workers are done
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
 
-	// Collect results
 	var scoredCombinations []ItemCombination
 	for result := range results {
 		if result.Error != nil {
-			fmt.Printf("Error processing combination: %v\n", result.Error) // Debug log
-			continue                                                       // Skip failed combinations
+			fmt.Printf("Error processing combination: %v\n", result.Error)
+			continue
 		}
 		scoredCombinations = append(scoredCombinations, result.Combination)
 	}
 
 	return scoredCombinations
+}
+
+// NEW: Get multiple top recipes per combination
+func scoreCombinationMulti(items []schema.Item) ([]ItemCombination, error) {
+	// Create keyword string for API call
+	var keywords []string
+	for _, item := range items {
+		keywords = append(keywords, strings.ToLower(strings.TrimSpace(item.Name)))
+	}
+
+	keywordString := strings.Join(keywords, "-")
+	if len(keywords) == 0 {
+		keywordString = "resep" // Default search
+	}
+
+	// API Call with context for timeout
+	ctx, cancel := context.WithTimeout(context.Background(), APITimeout)
+	defer cancel()
+
+	recipes, err := searchRecipesWithContext(ctx, keywordString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search recipes: %v", err)
+	}
+
+	if len(recipes) == 0 {
+		return nil, fmt.Errorf("no recipes found for keywords: %s", keywordString)
+	}
+
+	// Sort recipes by quality score (DESC)
+	sort.Slice(recipes, func(i, j int) bool {
+		return calculateRecipeQualityScore(recipes[i]) > calculateRecipeQualityScore(recipes[j])
+	})
+
+	// Take top recipes per combination
+	maxPerCombo := MaxRecipesPerCombo
+	if len(recipes) < maxPerCombo {
+		maxPerCombo = len(recipes)
+	}
+	topRecipes := recipes[:maxPerCombo]
+
+	// Score each recipe individually
+	var comboRecipes []ItemCombination
+	for _, recipe := range topRecipes {
+		// Calculate missing ingredients
+		missingIngredients, totalIngredients := calculateMissingIngredientsConcurrent(ctx, recipe.Slug, keywords)
+
+		// Calculate component scores
+		expDateScore := calculateExpDateScore(items)
+		recipeQualityScore := calculateRecipeQualityScore(recipe)
+		availabilityScore := calculateAvailabilityScore(missingIngredients, totalIngredients)
+
+		// Calculate overall score
+		overallScore := calculateEnhancedScore(recipe, missingIngredients, totalIngredients,
+			expDateScore, recipeQualityScore, availabilityScore)
+
+		comboRecipes = append(comboRecipes, ItemCombination{
+			Keywords:           keywords,
+			KeywordString:      keywordString,
+			Score:              overallScore,
+			BestRecipe:         recipe,
+			MissingIngredients: missingIngredients,
+			TotalIngredients:   totalIngredients,
+			ExpDateScore:       expDateScore,
+			RecipeQualityScore: recipeQualityScore,
+			AvailabilityScore:  availabilityScore,
+		})
+	}
+
+	return comboRecipes, nil
 }
 
 func getUniqueItems(items []schema.Item) []schema.Item {
