@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/middleware"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,14 +16,14 @@ func AllRecipesHandler(c *gin.Context) {
 	}
 
 	userData := user.(middleware.JWTUserData)
+	data, err := service.GetAllOptimalItems(1, 10, userData.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello from /recipe/all!",
-		"user": gin.H{
-			"id":    userData.ID,
-			"email": userData.Email,
-			"name":  userData.Name,
-		},
+		"data": data,
 	})
 
 }
