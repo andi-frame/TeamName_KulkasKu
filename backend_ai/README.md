@@ -24,4 +24,4 @@ Download JSON credentials
 Set path ke file JSON di .env
 
 run 
-python main.py or uvicorn main:app --reload
+python main.py or uvicorn main:app --reload --host localhost --port 8001
