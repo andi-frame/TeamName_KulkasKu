@@ -1,5 +1,6 @@
 import { Header } from "@/components/header";
 import { Navbar } from "@/components/navbar";
+import { FoodScanner } from "@/components/food-scanner";
 
 export default function Home() {
   return (
@@ -13,6 +14,8 @@ export default function Home() {
         tanggalAwal={new Date(Date.now())}
         tanggalKedaluwarsa={new Date(Date.now())}
       /> */}
+      <FoodScanner />
+
     </div>
   );
 }
