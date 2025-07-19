@@ -65,19 +65,16 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
   }, [mode]);
 
   const cleanup = () => {
-    // Stop scanning interval
     if (scanningIntervalRef.current) {
       clearInterval(scanningIntervalRef.current);
       scanningIntervalRef.current = null;
     }
 
-    // Stop camera stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
-    // Cleanup ZXing reader
     if (codeReaderRef.current) {
       codeReaderRef.current = null;
     }
@@ -90,10 +87,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
     try {
       setIsLoading(true);
 
-      // Request camera permission
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "environment", // Back camera
+          facingMode: "environment",
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -104,7 +100,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
 
-        // Wait for video to be ready
         return new Promise((resolve) => {
           const onLoadedMetadata = () => {
             setIsCameraReady(true);
@@ -115,7 +110,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
 
           videoRef.current?.addEventListener("loadedmetadata", onLoadedMetadata);
 
-          // Fallback timeout
           setTimeout(() => {
             setIsCameraReady(true);
             setIsLoading(false);
@@ -142,7 +136,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
       setIsScanning(true);
       codeReaderRef.current = new BrowserMultiFormatReader();
 
-      // Continuous scanning dengan interval
       const scanLoop = () => {
         if (!codeReaderRef.current || !videoRef.current || mode !== "camera") {
           return;
@@ -156,13 +149,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
               scanBarcode(result.getText());
             }
           })
-          .catch(() => {
-            // Silent catch - no barcode found, continue scanning
-          });
+          .catch(() => {});
       };
-
-      // Start scanning loop
-      scanningIntervalRef.current = setInterval(scanLoop, 500); // Scan every 500ms
+      scanningIntervalRef.current = setInterval(scanLoop, 500);
     } catch (error) {
       console.error("Barcode scanning error:", error);
       alert("Error memulai scanner barcode. Silakan coba lagi.");
@@ -183,16 +172,13 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
     setIsLoading(true);
 
     try {
-      // Set canvas size to match video
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // Draw video frame to canvas
         ctx.drawImage(video, 0, 0);
 
-        // Convert canvas to blob
         canvas.toBlob(
           async (blob) => {
             if (blob) {
@@ -235,7 +221,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
     const cameraStarted = await startCamera();
 
     if (cameraStarted && type === "barcode") {
-      // Wait a bit for camera to stabilize, then start scanning
       setTimeout(() => {
         startBarcodeScanning();
       }, 1500);
@@ -248,10 +233,8 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
     setScannerType(null);
   };
 
-  // API Functions
   const scanBarcode = async (barcode: string) => {
     try {
-      // Stop scanning while processing
       if (scanningIntervalRef.current) {
         clearInterval(scanningIntervalRef.current);
         scanningIntervalRef.current = null;
@@ -273,7 +256,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
         handleCloseCamera();
       } else {
         alert(`Error: ${result?.error || "Failed to get product info"}`);
-        // Restart scanning if failed
         setTimeout(() => {
           startBarcodeScanning();
         }, 1000);
@@ -281,7 +263,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
     } catch (error) {
       console.error("Barcode scan error:", error);
       alert("Gagal scan barcode. Silakan coba lagi.");
-      // Restart scanning if failed
       setTimeout(() => {
         startBarcodeScanning();
       }, 1000);
@@ -342,8 +323,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
 
   const processBarcodeImage = async (file: File) => {
     try {
-      // Since there's no dedicated barcode image endpoint,
-      // we'll use a client-side barcode reader for images
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const img = new Image();
@@ -382,7 +361,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
         <ScannerSelection onSelect={handleSelect} />
       ) : (
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          {/* Header */}
           <div className="flex justify-between items-center p-4 bg-black text-white">
             <h2 className="text-lg font-semibold">
               {scannerType === "barcode" ? "Scan Barcode" : scannerType === "image" ? "Foto Produk" : "Foto Struk"}
@@ -395,11 +373,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
             </button>
           </div>
 
-          {/* Camera View */}
           <div className="flex-1 relative flex items-center justify-center bg-black">
             <video ref={videoRef} autoPlay playsInline muted className="max-w-full max-h-full object-contain" />
 
-            {/* Camera Loading */}
             {!isCameraReady && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="bg-black bg-opacity-75 text-white p-4 rounded-lg flex flex-col items-center">
@@ -409,7 +385,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
               </div>
             )}
 
-            {/* Barcode Scanning Overlay */}
             {scannerType === "barcode" && isCameraReady && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="border-2 border-white border-dashed w-64 h-32 rounded-lg flex items-center justify-center">
@@ -425,7 +400,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
               </div>
             )}
 
-            {/* Capture Guide */}
             {(scannerType === "image" || scannerType === "receipt") && isCameraReady && (
               <div className="absolute top-4 left-4 right-4 text-center">
                 <div className="bg-black bg-opacity-75 text-white p-3 rounded-lg">
@@ -437,10 +411,8 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
             )}
           </div>
 
-          {/* Controls */}
           {isCameraReady && (
             <div className="p-6 bg-black flex justify-center space-x-4">
-              {/* Capture Button */}
               <button
                 onClick={captureImage}
                 disabled={isLoading || isCapturing}
@@ -455,7 +427,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
                 )}
               </button>
 
-              {/* Cancel Button */}
               <button
                 onClick={handleCloseCamera}
                 disabled={isLoading}
@@ -468,7 +439,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
             </div>
           )}
 
-          {/* Loading Overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10">
               <div className="bg-white rounded-lg p-6 flex flex-col items-center space-y-4">
@@ -484,7 +454,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
             </div>
           )}
 
-          {/* Hidden canvas for image capture */}
           <canvas ref={canvasRef} style={{ display: "none" }} />
         </div>
       )}

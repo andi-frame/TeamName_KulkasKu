@@ -1,6 +1,6 @@
 import { Header } from "@/components/header";
 import { Navbar } from "@/components/navbar";
-import { FoodScanner } from "@/components/food-scanner";
+// import { FoodScanner } from "@/components/food-scanner";
 
 export default function Home() {
   return (
@@ -14,7 +14,11 @@ export default function Home() {
         tanggalAwal={new Date(Date.now())}
         tanggalKedaluwarsa={new Date(Date.now())}
       /> */}
-      <FoodScanner />
+      {/* <FoodScanner 
+        onBarcodeResult={(result) => console.log("Barcode result:", result)}
+        onImageResult={(result) => console.log("Image result:", result)}
+        onReceiptResult={(result) => console.log("Receipt result:", result)}
+      /> */}
 
     </div>
   );
