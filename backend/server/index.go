@@ -30,7 +30,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// Routes
 	routes.AuthRoute(r, cfg)
 	routes.PredictionRoute(r, cfg)
-	routes.RecipeRoute(r, cfg)
+	routes.ProductRoute(r, cfg)
+	routes.ReceiptRoute(r, cfg) 
 
 	return r
 }
