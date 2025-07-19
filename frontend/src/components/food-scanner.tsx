@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { ScannerSelection } from "./scanner-selection";
 import { Camera, X } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
@@ -182,7 +183,11 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
         canvas.toBlob(
           async (blob) => {
             if (blob) {
-              const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+              const timestamp = Date.now();
+              const file = new File([blob], `capture_${timestamp}.jpg`, {
+                type: "image/jpeg",
+                lastModified: timestamp,
+              });
 
               try {
                 if (scannerType === "image") {
@@ -241,28 +246,39 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
       }
 
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5000/product-info/${barcode}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
 
-      const result = await response.json();
+      const response = await axios.post(
+        `http://localhost:5000/product-info/${barcode}`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      if (response.ok && result) {
+      const result = response.data;
+
+      if (result) {
         console.log("Barcode scan result:", result);
         onBarcodeResult?.(result);
         handleCloseCamera();
       } else {
-        alert(`Error: ${result?.error || "Failed to get product info"}`);
+        alert("Failed to get product info");
         setTimeout(() => {
           startBarcodeScanning();
         }, 1000);
       }
     } catch (error) {
       console.error("Barcode scan error:", error);
-      alert("Gagal scan barcode. Silakan coba lagi.");
+
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.error || error.message || "Failed to get product info";
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert("Gagal scan barcode. Silakan coba lagi.");
+      }
+
       setTimeout(() => {
         startBarcodeScanning();
       }, 1000);
@@ -276,23 +292,30 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:5000/predict/image", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("http://localhost:5000/predict/image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      const result = await response.json();
+      const result = response.data;
 
-      if (response.ok && result) {
+      if (result) {
         console.log("Image prediction result:", result);
         onImageResult?.(result);
         handleCloseCamera();
       } else {
-        alert(`Error: ${result?.error || "Failed to predict item from image"}`);
+        alert("Failed to predict item from image");
       }
     } catch (error) {
       console.error("Image prediction error:", error);
-      alert("Gagal memprediksi item dari gambar.");
+
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.error || error.message || "Failed to predict item from image";
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert("Gagal memprediksi item dari gambar.");
+      }
     }
   };
 
@@ -301,23 +324,30 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:5000/receipt/scan", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("http://localhost:5000/receipt/scan", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      const result = await response.json();
+      const result = response.data;
 
-      if (response.ok && result) {
+      if (result) {
         console.log("Receipt analysis result:", result);
         onReceiptResult?.(result);
         handleCloseCamera();
       } else {
-        alert(`Error: ${result?.error || "Failed to analyze receipt"}`);
+        alert("Failed to analyze receipt");
       }
     } catch (error) {
       console.error("Receipt analysis error:", error);
-      alert("Gagal menganalisis struk.");
+
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.error || error.message || "Failed to analyze receipt";
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert("Gagal menganalisis struk.");
+      }
     }
   };
 

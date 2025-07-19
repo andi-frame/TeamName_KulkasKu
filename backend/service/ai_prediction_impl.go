@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"time"
 )
 
@@ -33,17 +34,20 @@ func (s *aiPredictionServiceImpl) PredictItem(imageData []byte) (*AIResult, erro
 	// 1. Siapkan request multipart/form-data dengan gambar
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	
-	part, err := writer.CreateFormFile("file", "image.jpg")
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", `form-data; name="file"; filename="image.jpg"`)
+	h.Set("Content-Type", "image/jpeg")
+	part, err := writer.CreatePart(h)
 	if err != nil {
 		return nil, fmt.Errorf("gagal membuat form file: %w", err)
 	}
-	
+
 	_, err = io.Copy(part, bytes.NewReader(imageData))
 	if err != nil {
 		return nil, fmt.Errorf("gagal menulis data gambar: %w", err)
 	}
-	
+
 	err = writer.Close()
 	if err != nil {
 		return nil, fmt.Errorf("gagal menutup writer: %w", err)
