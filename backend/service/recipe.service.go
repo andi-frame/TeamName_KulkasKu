@@ -12,6 +12,7 @@ import (
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/utils"
 )
 
 // Enhanced Recipe struct with additional fields from API response
@@ -407,7 +408,7 @@ func calculateRecipeQualityScore(recipe Recipe) float64 {
 	// Visited count score with logarithmic scaling to prevent domination
 	visitedScore := 0.0
 	if recipe.VisitedCount > 0 {
-		visitedScore = minFloat(float64(recipe.VisitedCount)*0.01, 30.0) // Cap at 30
+		visitedScore = utils.MinFloat(float64(recipe.VisitedCount)*0.01, 30.0) // Cap at 30
 	}
 
 	// Cooking time score (shorter is better for convenience)
@@ -469,7 +470,7 @@ func calculateTagRelevanceScore(tags []struct {
 		}
 	}
 
-	return minFloat(score, 10.0) // Cap at 10
+	return utils.MinFloat(score, 10.0) // Cap at 10
 }
 
 func calculateMissingIngredientsConcurrent(ctx context.Context, slug string, availableIngredients []string) (int, int) {
@@ -573,7 +574,7 @@ func estimateMissingIngredients(availableCount int) int {
 		estimatedTotal = 8 // More complex recipes for more ingredients
 	}
 
-	missing := maxInt(estimatedTotal-availableCount, 0)
+	missing := utils.MaxInt(estimatedTotal-availableCount, 0)
 	return missing
 }
 
@@ -618,9 +619,9 @@ func calculateAvailabilityScore(missingIngredients, totalIngredients int) float6
 
 func calculateEnhancedScore(recipe Recipe, missingIngredients, totalIngredients int, expDateScore, recipeQualityScore, availabilityScore float64) float64 {
 	// Normalize scores to 0-100 range
-	normalizedExpScore := minFloat(expDateScore, 100.0)
-	normalizedQualityScore := minFloat(recipeQualityScore, 100.0)
-	normalizedAvailabilityScore := minFloat(availabilityScore, 100.0)
+	normalizedExpScore := utils.MinFloat(expDateScore, 100.0)
+	normalizedQualityScore := utils.MinFloat(recipeQualityScore, 100.0)
+	normalizedAvailabilityScore := utils.MinFloat(availabilityScore, 100.0)
 
 	// Dynamic weighting based on context
 	// If items are expiring soon, increase urgency weight
@@ -644,19 +645,4 @@ func calculateEnhancedScore(recipe Recipe, missingIngredients, totalIngredients 
 		(normalizedExpScore * urgencyWeight)
 
 	return finalScore
-}
-
-// Utility functions
-func minFloat(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
