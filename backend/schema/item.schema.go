@@ -9,14 +9,16 @@ import (
 
 type Item struct {
 	BaseModel
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    uuid.UUID `gorm:"type:uuid"`
-	User      User      `gorm:"foreignKey:UserID;references:ID"`
-	Name      string
-	Type      string
-	Amount    float64
-	ExpDate   time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	UserID     uuid.UUID `gorm:"type:uuid"`
+	User       User      `gorm:"foreignKey:UserID;references:ID"`
+	Name       string
+	Type       string
+	Amount     float64
+	AmountType *string
+	Desc       *string
+	ExpDate    time.Time
 }
 
 func (i *Item) BeforeCreate(tx *gorm.DB) (err error) {

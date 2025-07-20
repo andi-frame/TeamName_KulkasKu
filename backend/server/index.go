@@ -31,6 +31,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.AuthRoute(r, cfg)
 	routes.PredictionRoute(r, cfg)
 	routes.RecipeRoute(r, cfg)
+	routes.ItemRoute(r, cfg)
 
 	return r
 }

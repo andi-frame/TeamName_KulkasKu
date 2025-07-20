@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { ChevronLeft } from "lucide-react";
 
 const Page = () => {
@@ -17,17 +18,31 @@ const Page = () => {
     setTanggalMasuk(formatted);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = {
-      namaMakanan,
-      jumlah,
-      satuan,
-      tanggalMasuk,
-      tanggalKedaluwarsa,
-      deskripsi,
-    };
-    console.log("Form Data:", formData);
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/item/create",
+        {
+          namaMakanan,
+          jumlah: parseFloat(jumlah),
+          satuan,
+          tanggalMasuk,
+          tanggalKedaluwarsa,
+          deskripsi,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log("Response:", response.data);
+      alert("Item berhasil ditambahkan!");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error("Error:", err.response?.data || err.message);
+      alert("Gagal menambahkan item.");
+    }
   };
 
   return (
