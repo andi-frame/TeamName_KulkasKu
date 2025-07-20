@@ -404,7 +404,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
             {scannerType === "barcode" && isCameraReady && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="border-2 border-white border-dashed w-64 h-32 rounded-lg flex items-center justify-center">
+                <div className="border-2 border-white border-dashed w-2/5 h-1/2 rounded-lg flex items-center justify-center">
                   <div className="text-white text-center">
                     <div className={`${isScanning ? "animate-pulse" : ""}`}>
                       {isScanning ? "🔍 Scanning..." : "Posisikan barcode di sini"}
