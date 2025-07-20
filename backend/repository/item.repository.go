@@ -35,7 +35,29 @@ func GetAllExpiredItem(userID string) ([]schema.Item, error) {
 }
 
 func CreateNewItem(item schema.Item, userID string) error {
-	result := database.DB.Create(&item).Where("user_id = ?", userID)
+	result := database.DB.Create(&item)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func UpdateItem(item schema.Item) error {
+	return database.DB.Model(&schema.Item{}).
+		Where("id = ?", item.ID).
+		Updates(map[string]any{
+			"name":        item.Name,
+			"type":        item.Type,
+			"amount":      item.Amount,
+			"amount_type": item.AmountType,
+			"desc":        item.Desc,
+			"start_date":  item.StartDate,
+			"exp_date":    item.ExpDate,
+		}).Error
+}
+
+func DeleteItem(itemID string) error {
+	result := database.DB.Delete(&schema.Item{}, "id = ?", itemID)
 	if result.Error != nil {
 		return result.Error
 	}
