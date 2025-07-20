@@ -28,21 +28,15 @@ const Page = () => {
     }
 
     try {
-      const response = await api.post(
-        "/item/create",
-        {
-          name,
-          type,
-          amount: parseFloat(amount),
-          amountType,
-          desc,
-          startDate,
-          expDate,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.post("/item/create", {
+        name,
+        type,
+        amount: parseFloat(amount),
+        amountType,
+        desc,
+        startDate,
+        expDate,
+      });
 
       console.log("Response:", response.data);
       alert("Item berhasil ditambahkan!");
