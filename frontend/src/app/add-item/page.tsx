@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import api from "@/utils/axios";
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -28,8 +28,8 @@ const Page = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/item/create",
+      const response = await api.post(
+        "/item/create",
         {
           name,
           type,
