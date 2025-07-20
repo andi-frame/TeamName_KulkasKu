@@ -33,3 +33,11 @@ func GetAllExpiredItem(userID string) ([]schema.Item, error) {
 	}
 	return items, nil
 }
+
+func CreateNewItem(item schema.Item, userID string) error {
+	result := database.DB.Create(&item).Where("user_id = ?", userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
