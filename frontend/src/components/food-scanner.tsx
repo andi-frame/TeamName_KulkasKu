@@ -5,28 +5,11 @@ import axios from "axios";
 import { ScannerSelection } from "./scanner-selection";
 import { Camera, X } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-
-interface FoodScannerProps {
-  onBarcodeResult?: (result: { name: string; barcode: string }) => void;
-  onImageResult?: (result: {
-    item_name: string;
-    predicted_remaining_days: number;
-    reasoning: string;
-    condition_description?: string;
-  }) => void;
-  onReceiptResult?: (result: { items: ReceiptItem[]; total_items: number; confidence: number }) => void;
-  onClose?: () => void;
-}
-
-interface ReceiptItem {
-  name: string;
-  quantity: number;
-  price?: number;
-}
+import { FoodScannerProps, ScannerType } from "@/types/scanner.types";
 
 export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, onClose }: FoodScannerProps) {
   const [mode, setMode] = useState<"selection" | "camera">("selection");
-  const [scannerType, setScannerType] = useState<"barcode" | "image" | "receipt" | null>(null);
+  const [scannerType, setScannerType] = useState<ScannerType | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -219,7 +202,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     }
   };
 
-  const handleSelect = async (type: "barcode" | "image" | "receipt") => {
+  const handleSelect = async (type: ScannerType) => {
     setScannerType(type);
     setMode("camera");
 

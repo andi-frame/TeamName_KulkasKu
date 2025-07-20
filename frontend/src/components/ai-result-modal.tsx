@@ -1,17 +1,6 @@
 import React from "react";
 import { X, Check, XCircle } from "lucide-react";
-
-interface AIResultModalProps {
-  isOpen: boolean;
-  result: {
-    item_name: string;
-    predicted_remaining_days: number;
-    reasoning: string;
-    condition_description?: string;
-  } | null;
-  onAccept: () => void;
-  onCancel: () => void;
-}
+import { AIResultModalProps } from "@/types/scanner.types";
 
 export function AIResultModal({ isOpen, result, onAccept, onCancel }: AIResultModalProps) {
   if (!isOpen || !result) return null;

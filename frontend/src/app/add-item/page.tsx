@@ -6,6 +6,7 @@ import Link from "next/link";
 import api from "@/utils/axios";
 import { FoodScanner } from "@/components/food-scanner";
 import { AIResultModal } from "@/components/ai-result-modal";
+import { BarcodeResult, ImagePredictionResult } from "@/types/scanner.types";
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -17,12 +18,7 @@ const Page = () => {
   const [desc, setDesc] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showAIResult, setShowAIResult] = useState(false);
-  const [aiResult, setAiResult] = useState<{
-    item_name: string;
-    predicted_remaining_days: number;
-    reasoning: string;
-    condition_description?: string;
-  } | null>(null);
+  const [aiResult, setAiResult] = useState<ImagePredictionResult | null>(null);
 
   useEffect(() => {
     const today = new Date();
@@ -34,19 +30,14 @@ const Page = () => {
     setShowScanner(true);
   };
 
-  const handleImageResult = (result: {
-    item_name: string;
-    predicted_remaining_days: number;
-    reasoning: string;
-    condition_description?: string;
-  }) => {
+  const handleImageResult = (result: ImagePredictionResult) => {
     // Show AI result modal instead of directly filling form
     setAiResult(result);
     setShowAIResult(true);
     setShowScanner(false);
   };
 
-  const handleBarcodeResult = (result: { name: string; barcode: string }) => {
+  const handleBarcodeResult = (result: BarcodeResult) => {
     // Fill form with barcode data directly (no AI analysis needed)
     setName(result.name);
     setShowScanner(false);
