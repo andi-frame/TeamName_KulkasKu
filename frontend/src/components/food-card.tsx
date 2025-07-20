@@ -1,30 +1,23 @@
 // Icons
-import { ChevronRight } from "lucide-react"
-import { LeafIcon } from "lucide-react"
+import { Item } from "@/types/item.types";
+import { ChevronRight } from "lucide-react";
+import { LeafIcon } from "lucide-react";
 
-interface FoodCardProps {
-	foodName: string,
-	amount: string,			// jumlah + satuannya
-	createdAt: Date,
-	expiredAt: Date,
-}
-
-export function FoodCard({
-  foodName,
-  amount,
-  createdAt,
-  expiredAt,
-}: FoodCardProps) {
+export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
   function formattedDate() {
+    const date = new Date(StartDate);
+    if (isNaN(date.getTime())) return "Invalid date";
+
     return new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
       month: "long",
       year: "numeric",
-    }).format(createdAt);
+    }).format(date);
   }
 
   function daysLeft() {
-	  return Math.ceil((expiredAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const exp = new Date(ExpDate);
+    return Math.ceil((exp.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   }
 
   return (
@@ -37,20 +30,20 @@ export function FoodCard({
         <div className="flex justify-between items-center w-full">
           <div className="flex items-start gap-3.5">
             <div className="w-4 h-4 my-1 relative overflow-hidden">
-              <LeafIcon size={18}/>
+              <LeafIcon size={18} />
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium">{foodName}</div>
+              <div className="text-base font-medium">{Name}</div>
               <div className="text-[10px]">dari {formattedDate()}</div>
               <div className="text-[10px]">kedaluwarsa dalam {daysLeft()} hari</div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-5">
-            <div className="text-black text-xs">{amount}</div>
+            <div className="text-black text-xs">{Amount}</div>
             <div className="flex items-center gap-0.5">
               <div className="text-black text-[10px] ">detail</div>
               <div className="w-5 h-4 relative">
-                <ChevronRight size={18}/>
+                <ChevronRight size={18} />
               </div>
             </div>
           </div>
