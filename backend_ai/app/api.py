@@ -97,7 +97,7 @@ async def predict_item_with_reasoning(file: UploadFile = File(...)):
     try:
         result = await gemini.predict_item(file)
         logger.info(
-            f"Prediksi berhasil: {result.item_name} - {result.predicted_remaining_days} hari")
+            f"Prediksi berhasil: {result.item_name} - {result.predicted_remaining_days} hari - {result.condition_description}")
         return result
 
     except HTTPException:
