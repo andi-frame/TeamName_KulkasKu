@@ -181,7 +181,7 @@ const FoodCardPopup = ({ ID, Name, Type, Amount, AmountType, Desc, StartDate, Ex
         {/* Deskripsi */}
         <div className="flex flex-col">
           <label htmlFor="desc" className="text-xs font-semibold py-1">
-            Deskripsi {desc != (Desc ?? "") ? <span className="text-xs text-gray-500">({Desc})</span> : ""}
+            Deskripsi {(desc ?? "") != (Desc ?? "") ? <span className="text-xs text-gray-500">({Desc})</span> : ""}
           </label>
           <input
             type="text"
