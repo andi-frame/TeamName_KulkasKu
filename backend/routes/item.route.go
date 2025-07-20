@@ -14,4 +14,6 @@ func ItemRoute(r *gin.Engine, cfg config.Config) {
 	itemRoutes.POST("/create", controller.CreateNewItemHandler)
 	itemRoutes.GET("/all", controller.GetAllItemHandler)
 	itemRoutes.GET("/expired", controller.GetAllExpiredItemHandler)
+	itemRoutes.GET("/fresh", controller.GetAllFreshItemHandler)
+
 }
