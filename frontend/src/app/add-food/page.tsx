@@ -9,6 +9,7 @@ const Page = () => {
   const [satuan, setSatuan] = useState("satuan");
   const [tanggalMasuk, setTanggalMasuk] = useState("");
   const [tanggalKedaluwarsa, setTanggalKedaluwarsa] = useState("");
+  const [deskripsi, setDeskripsi] = useState("");
 
   useEffect(() => {
     const today = new Date();
@@ -24,6 +25,7 @@ const Page = () => {
       satuan,
       tanggalMasuk,
       tanggalKedaluwarsa,
+      deskripsi,
     };
     console.log("Form Data:", formData);
   };
@@ -110,6 +112,21 @@ const Page = () => {
                 Scan
               </button>
             </div>
+          </div>
+
+          {/* Deskripsi */}
+          <div className="flex flex-col">
+            <label htmlFor="deskripsi" className="text-xs font-semibold py-1">
+              Deskripsi
+            </label>
+            <input
+              type="text"
+              id="deskripsi"
+              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+              placeholder="Masukkan deskripsi makanan"
+              value={deskripsi}
+              onChange={(e) => setDeskripsi(e.target.value)}
+            />
           </div>
         </div>
 
