@@ -2,22 +2,22 @@ package controller
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/middleware"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
-	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type CreateItemRequest struct {
-	NamaMakanan        string  `json:"namaMakanan"`
-	Jumlah             float64 `json:"jumlah"`
-	Satuan             string  `json:"satuan"`
-	TanggalMasuk       string  `json:"tanggalMasuk"`       // format: yyyy-mm-dd
-	TanggalKedaluwarsa string  `json:"tanggalKedaluwarsa"` // format: yyyy-mm-dd
-	Deskripsi          string  `json:"deskripsi"`
+	Name       string  `json:"name"`
+	Type       string  `json:"type"`
+	Amount     float64 `json:"amount"`
+	AmountType string  `json:"amountType"`
+	Desc       string  `json:"desc"`       // optional
+	StartDate  string  `json:"startDate"`  // format: yyyy-mm-dd
+	ExpDate    string  `json:"expDate"`    // format: yyyy-mm-dd
 }
 
 func GetAllItemHandler(c *gin.Context) {
@@ -60,34 +60,18 @@ func CreateNewItemHandler(c *gin.Context) {
 		return
 	}
 
-	expDate, err := time.Parse("2006-01-02", req.TanggalKedaluwarsa)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid expiration date format"})
-		return
-	}
-
-	var amountType *string = nil
-	if req.Satuan != "" {
-		amountType = &req.Satuan
-	}
-
-	var desc *string = nil
-	if req.Deskripsi != "" {
-		desc = &req.Deskripsi
-	}
-
-	item := schema.Item{
+	err = service.CreateNewItem(service.CreateItemInput{
 		UserID:     userID,
-		Name:       req.NamaMakanan,
-		Amount:     req.Jumlah,
-		Type:       req.Satuan,
-		AmountType: amountType,
-		Desc:       desc,
-		ExpDate:    expDate,
-	}
-
-	if err := repository.CreateNewItem(item, userID.String()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item"})
+		Name:       req.Name,
+		Type:       req.Type,
+		Amount:     req.Amount,
+		AmountType: req.AmountType,
+		Desc:       req.Desc,
+		StartDate:  req.StartDate,
+		ExpDate:    req.ExpDate,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -16,8 +16,9 @@ type Item struct {
 	Name       string
 	Type       string
 	Amount     float64
-	AmountType *string
+	AmountType string
 	Desc       *string
+	StartDate  time.Time
 	ExpDate    time.Time
 }
 

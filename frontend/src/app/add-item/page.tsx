@@ -5,17 +5,18 @@ import axios from "axios";
 import { ChevronLeft } from "lucide-react";
 
 const Page = () => {
-  const [namaMakanan, setNamaMakanan] = useState("");
-  const [jumlah, setJumlah] = useState("");
-  const [satuan, setSatuan] = useState("satuan");
-  const [tanggalMasuk, setTanggalMasuk] = useState("");
-  const [tanggalKedaluwarsa, setTanggalKedaluwarsa] = useState("");
-  const [deskripsi, setDeskripsi] = useState("");
+  const [name, setName] = useState("");
+  const [type, setType] = useState("");
+  const [amount, setAmount] = useState("");
+  const [amountType, setAmountType] = useState("satuan");
+  const [startDate, setStartDate] = useState("");
+  const [expDate, setExpDate] = useState("");
+  const [desc, setDesc] = useState("");
 
   useEffect(() => {
     const today = new Date();
     const formatted = today.toISOString().split("T")[0]; // "yyyy-mm-dd"
-    setTanggalMasuk(formatted);
+    setStartDate(formatted);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,12 +25,13 @@ const Page = () => {
       const response = await axios.post(
         "http://localhost:5000/item/create",
         {
-          namaMakanan,
-          jumlah: parseFloat(jumlah),
-          satuan,
-          tanggalMasuk,
-          tanggalKedaluwarsa,
-          deskripsi,
+          name,
+          type,
+          amount,
+          amountType,
+          desc,
+          startDate,
+          expDate,
         },
         {
           withCredentials: true,
@@ -49,26 +51,50 @@ const Page = () => {
     <div className="w-full p-4 flex flex-col justify-start gap-3">
       <div className="flex gap-1 items-center">
         <ChevronLeft size={35} strokeWidth={1} />
-        <span className="text-md font-extralight">Tambah Makanan</span>
+        <span className="text-md font-extralight">Tambah Item</span>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col justify-center pt-6">
-        <div className="text-xl font-bold py-5">Tambahkan Bahan</div>
+        <div className="text-xl font-bold py-5">Tambahkan Item</div>
 
         <div className="flex flex-col gap-3">
-          {/* Nama Makanan */}
+          {/* Nama Item */}
           <div className="flex flex-col">
-            <label htmlFor="namaMakanan" className="text-xs font-semibold py-1">
-              Nama Makanan
+            <label htmlFor="name" className="text-xs font-semibold py-1">
+              Nama Item
             </label>
             <input
               type="text"
-              id="namaMakanan"
+              id="name"
               className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              placeholder="Masukkan nama makanan"
-              value={namaMakanan}
-              onChange={(e) => setNamaMakanan(e.target.value)}
+              placeholder="Masukkan nama item"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
+          </div>
+
+          {/* Tipe Item */}
+          <div className="flex flex-col">
+            <label htmlFor="type" className="text-xs font-semibold py-1">
+              Tipe Item
+            </label>
+            <input
+              list="type-options"
+              type="text"
+              id="type"
+              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+              placeholder="Masukkan tipe item"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            />
+            <datalist id="type-options">
+              <option value="Sayur" />
+              <option value="Rempah" />
+              <option value="Buah" />
+              <option value="Daging" />
+              <option value="Minuman" />
+              <option value="Lainnya" />
+            </datalist>
           </div>
 
           {/* Jumlah & Satuan */}
@@ -79,13 +105,13 @@ const Page = () => {
                 type="float"
                 className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
                 placeholder="Masukkan jumlah"
-                value={jumlah}
-                onChange={(e) => setJumlah(e.target.value)}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
               />
               <select
                 className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
-                value={satuan}
-                onChange={(e) => setSatuan(e.target.value)}>
+                value={amountType}
+                onChange={(e) => setAmountType(e.target.value)}>
                 <option value="kilogram">Kilogram</option>
                 <option value="liter">Liter</option>
                 <option value="ikat">Ikat</option>
@@ -96,30 +122,30 @@ const Page = () => {
 
           {/* Tanggal Masuk */}
           <div className="flex flex-col">
-            <label htmlFor="tanggalMasuk" className="text-xs font-semibold py-1">
+            <label htmlFor="startDate" className="text-xs font-semibold py-1">
               Tanggal Masuk
             </label>
             <input
               type="date"
-              id="tanggalMasuk"
+              id="startDate"
               className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              value={tanggalMasuk}
-              onChange={(e) => setTanggalMasuk(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
 
           {/* Tanggal Kedaluwarsa */}
           <div className="flex flex-col">
-            <label htmlFor="tanggalKedaluwarsa" className="text-xs font-semibold py-1">
+            <label htmlFor="expDate" className="text-xs font-semibold py-1">
               Tanggal Kedaluwarsa
             </label>
             <div className="w-full flex gap-3">
               <input
                 type="date"
-                id="tanggalKedaluwarsa"
+                id="expDate"
                 className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-2/3 focus:outline-[#5DB1FF]"
-                value={tanggalKedaluwarsa}
-                onChange={(e) => setTanggalKedaluwarsa(e.target.value)}
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
               />
               <button
                 type="button"
@@ -131,16 +157,16 @@ const Page = () => {
 
           {/* Deskripsi */}
           <div className="flex flex-col">
-            <label htmlFor="deskripsi" className="text-xs font-semibold py-1">
+            <label htmlFor="desc" className="text-xs font-semibold py-1">
               Deskripsi
             </label>
             <input
               type="text"
-              id="deskripsi"
+              id="desc"
               className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
               placeholder="Masukkan deskripsi makanan"
-              value={deskripsi}
-              onChange={(e) => setDeskripsi(e.target.value)}
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
             />
           </div>
         </div>
