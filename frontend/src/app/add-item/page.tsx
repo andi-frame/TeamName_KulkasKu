@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import api from "@/utils/axios";
+import { FoodScanner } from "@/components/food-scanner";
+import { AIResultModal } from "@/components/ai-result-modal";
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -13,12 +15,68 @@ const Page = () => {
   const [startDate, setStartDate] = useState("");
   const [expDate, setExpDate] = useState("");
   const [desc, setDesc] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
+  const [showAIResult, setShowAIResult] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    item_name: string;
+    predicted_remaining_days: number;
+    reasoning: string;
+    condition_description?: string;
+  } | null>(null);
 
   useEffect(() => {
     const today = new Date();
     const formatted = today.toISOString().split("T")[0]; // "yyyy-mm-dd"
     setStartDate(formatted);
   }, []);
+
+  const handleScanClick = () => {
+    setShowScanner(true);
+  };
+
+  const handleImageResult = (result: {
+    item_name: string;
+    predicted_remaining_days: number;
+    reasoning: string;
+    condition_description?: string;
+  }) => {
+    // Show AI result modal instead of directly filling form
+    setAiResult(result);
+    setShowAIResult(true);
+    setShowScanner(false);
+  };
+
+  const handleBarcodeResult = (result: { name: string; barcode: string }) => {
+    // Fill form with barcode data directly (no AI analysis needed)
+    setName(result.name);
+    setShowScanner(false);
+  };
+
+  const handleAcceptAIResult = () => {
+    if (aiResult) {
+      const startDateObj = new Date(startDate);
+      startDateObj.setDate(startDateObj.getDate() + aiResult.predicted_remaining_days);
+      const calculatedExpDate = startDateObj.toISOString().split("T")[0];
+
+      // Fill form with AI result data
+      setName(aiResult.item_name);
+      setExpDate(calculatedExpDate);
+      if (aiResult.condition_description) {
+        setDesc(aiResult.condition_description);
+      }
+      setShowAIResult(false);
+      setAiResult(null);
+    }
+  };
+
+  const handleCancelAIResult = () => {
+    setShowAIResult(false);
+    setAiResult(null);
+  };
+
+  const handleCloseScannerPopup = () => {
+    setShowScanner(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +217,7 @@ const Page = () => {
               />
               <button
                 type="button"
+                onClick={handleScanClick}
                 className="text-xs text-center min-w-0 w-1/3 py-2 bg-[#5DB1FF] rounded-md text-white font-semibold flex-shrink">
                 Scan
               </button>
@@ -188,6 +247,14 @@ const Page = () => {
           </button>
         </div>
       </form>
+
+      {/* Scanner Popup */}
+      {showScanner && (
+        <FoodScanner onImageResult={handleImageResult} onBarcodeResult={handleBarcodeResult} onClose={handleCloseScannerPopup} />
+      )}
+
+      {/* AI Result Modal */}
+      <AIResultModal isOpen={showAIResult} result={aiResult} onAccept={handleAcceptAIResult} onCancel={handleCancelAIResult} />
     </div>
   );
 };

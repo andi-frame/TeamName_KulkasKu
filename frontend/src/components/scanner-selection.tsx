@@ -3,12 +3,13 @@ import { Barcode, Fullscreen, ReceiptText } from "lucide-react";
 
 interface ScannerSelectionProps {
   onSelect: (type: "barcode" | "image" | "receipt") => void;
+  onClose: () => void;
 }
 
-export function ScannerSelection({ onSelect }: ScannerSelectionProps) {
+export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
   return (
-    <div className="flex flex-col items-center justify-center bg-gray-50 w-[400px] h-[150px]">
-      <div className="bg-[white] rounded-lg shadow-lg p-2 w-full">
+    <div className="fixed inset-0 bg-white/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => onSelect("barcode")}

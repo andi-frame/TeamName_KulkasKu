@@ -1,23 +1,24 @@
 package controller
 
 import (
-  "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-  "github.com/andi-frame/TeamName_KulkasKu/backend/service"
-  "io"
+	"io"
 	"net/http"
+	"strings"
 	"time"
-  "strings"
+
+	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 )
 
 type PredictionController struct {
-  predictionService service.AIPredictionService
+	predictionService service.AIPredictionService
 }
 
 func NewPredictionController(predictionService service.AIPredictionService) *PredictionController {
-  return &PredictionController{
-    predictionService: predictionService,
-  }
+	return &PredictionController{
+		predictionService: predictionService,
+	}
 }
 
 func isValidImageType(filename string) bool {
@@ -46,7 +47,7 @@ func (pc *PredictionController) PredictItemHandler(ctx *gin.Context) {
 	}
 	defer file.Close()
 
-  if !isValidImageType(header.Filename) {
+	if !isValidImageType(header.Filename) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error":   "Format file tidak didukung. Hanya JPG, JPEG, PNG yang diizinkan.",
@@ -83,26 +84,21 @@ func (pc *PredictionController) PredictItemHandler(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Olah hasil dari service
-	expiryDate := time.Now().AddDate(0, 0, aiResult.ExpiryDays)
-
-	// 4. Kirim respons JSON kembali ke frontend
+	// 3. Return the AI result directly in the format expected by frontend
 	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": gin.H{
-			"item_name":   aiResult.ItemName,
-			"condition":   aiResult.Condition,
-			"expiry_days": aiResult.ExpiryDays,
-			"expiry_date": expiryDate.Format("2006-01-02"),
-		},
+		"item_name":                aiResult.ItemName,
+		"condition_description":    aiResult.ConditionDescription,
+		"predicted_remaining_days": aiResult.PredictedRemainingDays,
+		"reasoning":                aiResult.Reasoning,
+		"confidence":               aiResult.Confidence,
 	})
 }
 
 // Handler untuk health check
 func (pc *PredictionController) HealthCheckHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Service is running",
+		"success":   true,
+		"message":   "Service is running",
 		"timestamp": time.Now().Format(time.RFC3339),
 	})
 }

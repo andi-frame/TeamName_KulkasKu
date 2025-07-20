@@ -11,10 +11,11 @@ interface FoodScannerProps {
   onImageResult?: (result: {
     item_name: string;
     predicted_remaining_days: number;
-    expiry_date: string;
     reasoning: string;
+    condition_description?: string;
   }) => void;
   onReceiptResult?: (result: { items: ReceiptItem[]; total_items: number; confidence: number }) => void;
+  onClose?: () => void;
 }
 
 interface ReceiptItem {
@@ -23,7 +24,7 @@ interface ReceiptItem {
   price?: number;
 }
 
-export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }: FoodScannerProps) {
+export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, onClose }: FoodScannerProps) {
   const [mode, setMode] = useState<"selection" | "camera">("selection");
   const [scannerType, setScannerType] = useState<"barcode" | "image" | "receipt" | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -219,7 +220,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
   };
 
   const handleSelect = async (type: "barcode" | "image" | "receipt") => {
-    console.log(`${type} scanner selected`);
     setScannerType(type);
     setMode("camera");
 
@@ -234,8 +234,12 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
 
   const handleCloseCamera = () => {
     cleanup();
-    setMode("selection");
-    setScannerType(null);
+    if (onClose) {
+      onClose();
+    } else {
+      setMode("selection");
+      setScannerType(null);
+    }
   };
 
   const scanBarcode = async (barcode: string) => {
@@ -300,12 +304,12 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
 
       const result = response.data;
 
-      if (result) {
+      if (result && result.item_name) {
         console.log("Image prediction result:", result);
         onImageResult?.(result);
         handleCloseCamera();
       } else {
-        alert("Failed to predict item from image");
+        alert("Failed to predict item from image - invalid response");
       }
     } catch (error) {
       console.error("Image prediction error:", error);
@@ -388,7 +392,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
   return (
     <div>
       {mode === "selection" ? (
-        <ScannerSelection onSelect={handleSelect} />
+        <ScannerSelection onSelect={handleSelect} onClose={onClose || (() => {})} />
       ) : (
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
           <div className="flex justify-between items-center p-4 bg-black text-white">
@@ -420,7 +424,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult }:
                 <div className="border-2 border-white border-dashed w-64 h-32 rounded-lg flex items-center justify-center">
                   <div className="text-white text-center">
                     <div className={`${isScanning ? "animate-pulse" : ""}`}>
-                      {isScanning ? "🔍 Scanning..." : "📱 Posisikan barcode di sini"}
+                      {isScanning ? "🔍 Scanning..." : "Posisikan barcode di sini"}
                     </div>
                     <div className="text-sm mt-2 opacity-75">
                       {isScanning ? "Jaga kamera tetap stabil" : "Auto-scan atau tekan tombol 📷"}
