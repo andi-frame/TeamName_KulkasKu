@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import api from "@/utils/axios";
 import { ScannerSelection } from "./scanner-selection";
-import { Camera, X } from "lucide-react";
+import { Camera, X, FolderOpen } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { FoodScannerProps, ScannerType } from "@/types/scanner.types";
 
@@ -17,6 +17,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const scanningIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -234,8 +235,8 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
       setIsLoading(true);
 
-      const response = await axios.post(
-        `http://localhost:5000/product-info/${barcode}`,
+      const response = await api.post(
+        `/product-info/${barcode}`,
         {},
         {
           headers: {
@@ -244,9 +245,13 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         }
       );
 
-      const result = response.data;
+      // Handle response wrapper dari backend
+      if (response.data.success && response.data.data) {
+        const result = {
+          name: response.data.data.name,
+          barcode: response.data.data.barcode,
+        };
 
-      if (result) {
         console.log("Barcode scan result:", result);
         onBarcodeResult?.(result);
         handleCloseCamera();
@@ -259,12 +264,13 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     } catch (error) {
       console.error("Barcode scan error:", error);
 
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.error || error.message || "Failed to get product info";
-        alert(`Error: ${errorMessage}`);
-      } else {
-        alert("Gagal scan barcode. Silakan coba lagi.");
+      let errorMessage = "Gagal scan barcode. Silakan coba lagi.";
+      if (error && typeof error === "object" && "response" in error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const axiosError = error as any;
+        errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to get product info";
       }
+      alert(`Error: ${errorMessage}`);
 
       setTimeout(() => {
         startBarcodeScanning();
@@ -279,7 +285,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await axios.post("http://localhost:5000/predict/image", formData, {
+      const response = await api.post("/predict/image", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -297,12 +303,13 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     } catch (error) {
       console.error("Image prediction error:", error);
 
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.error || error.message || "Failed to predict item from image";
-        alert(`Error: ${errorMessage}`);
-      } else {
-        alert("Gagal memprediksi item dari gambar.");
+      let errorMessage = "Gagal memprediksi item dari gambar.";
+      if (error && typeof error === "object" && "response" in error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const axiosError = error as any;
+        errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to predict item from image";
       }
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -311,7 +318,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await axios.post("http://localhost:5000/receipt/scan", formData, {
+      const response = await api.post("/receipt/scan", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -329,12 +336,13 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     } catch (error) {
       console.error("Receipt analysis error:", error);
 
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.error || error.message || "Failed to analyze receipt";
-        alert(`Error: ${errorMessage}`);
-      } else {
-        alert("Gagal menganalisis struk.");
+      let errorMessage = "Gagal menganalisis struk.";
+      if (error && typeof error === "object" && "response" in error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const axiosError = error as any;
+        errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to analyze receipt";
       }
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -372,6 +380,44 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     }
   };
 
+  const handleFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Silakan pilih file gambar (JPG, PNG, dll.)");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (scannerType === "image") {
+        await predictItemFromImage(file);
+      } else if (scannerType === "receipt") {
+        await analyzeReceipt(file);
+      } else if (scannerType === "barcode") {
+        await processBarcodeImage(file);
+      }
+    } catch (error) {
+      console.error("File processing error:", error);
+      alert("Gagal memproses file. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div>
       {mode === "selection" ? (
@@ -390,71 +436,100 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
             </button>
           </div>
 
-          <div className="flex-1 relative flex items-center justify-center bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="max-w-full max-h-full object-contain" />
+          {/* Main content */}
+          <div className="flex-1 flex flex-col lg:flex-row">
+            {/* Camera/Video section */}
+            <div className="flex-1 relative flex items-center justify-center bg-black lg:h-full">
+              <div className="relative w-full h-full max-w-2xl max-h-96 lg:max-h-full">
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
 
-            {!isCameraReady && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-black bg-opacity-75 text-white p-4 rounded-lg flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
-                  <p>Memuat kamera...</p>
-                </div>
-              </div>
-            )}
-
-            {scannerType === "barcode" && isCameraReady && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="border-2 border-white border-dashed w-2/5 h-1/2 rounded-lg flex items-center justify-center">
-                  <div className="text-white text-center">
-                    <div className={`${isScanning ? "animate-pulse" : ""}`}>
-                      {isScanning ? "🔍 Scanning..." : "Posisikan barcode di sini"}
-                    </div>
-                    <div className="text-sm mt-2 opacity-75">
-                      {isScanning ? "Jaga kamera tetap stabil" : "Auto-scan atau tekan tombol 📷"}
+                {!isCameraReady && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-black bg-opacity-75 text-white p-4 rounded-lg flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                      <p>Memuat kamera...</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {(scannerType === "image" || scannerType === "receipt") && isCameraReady && (
-              <div className="absolute top-4 left-4 right-4 text-center">
-                <div className="bg-black bg-opacity-75 text-white p-3 rounded-lg">
-                  {scannerType === "image"
-                    ? "Posisikan produk dalam frame dan tekan tombol foto"
-                    : "Posisikan struk dalam frame dan tekan tombol foto"}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {isCameraReady && (
-            <div className="p-6 bg-black flex justify-center space-x-4">
-              <button
-                onClick={captureImage}
-                disabled={isLoading || isCapturing}
-                className={`rounded-full p-4 transition-colors shadow-lg ${
-                  isLoading || isCapturing ? "bg-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-200"
-                }`}
-                title={isLoading ? "Memproses..." : "Ambil Foto"}>
-                {isLoading || isCapturing ? (
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-                ) : (
-                  <Camera size={32} className="text-black" />
                 )}
-              </button>
 
-              <button
-                onClick={handleCloseCamera}
-                disabled={isLoading}
-                className={`rounded-full p-4 transition-colors shadow-lg ${
-                  isLoading ? "bg-gray-600 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
-                }`}
-                title="Batal">
-                <X size={32} className="text-white" />
-              </button>
+                {scannerType === "barcode" && isCameraReady && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="border-2 border-white border-dashed w-3/5 h-2/5 rounded-lg flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <div className={`${isScanning ? "animate-pulse" : ""}`}>
+                          {isScanning ? "🔍 Scanning..." : "Posisikan barcode di sini"}
+                        </div>
+                        <div className="text-sm mt-2 opacity-75">
+                          {isScanning ? "Jaga kamera tetap stabil" : "Auto-scan atau tekan tombol 📷"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(scannerType === "image" || scannerType === "receipt") && isCameraReady && (
+                  <div className="absolute top-4 left-4 right-4 text-center">
+                    <div className="bg-black bg-opacity-75 text-white p-3 rounded-lg">
+                      {scannerType === "image"
+                        ? "Posisikan produk dalam frame dan tekan tombol foto"
+                        : "Posisikan struk dalam frame dan tekan tombol foto"}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+
+            {/* Controls section */}
+            <div className="lg:w-80 bg-gray-900 flex flex-col justify-center p-6">
+              <div className="space-y-4">
+                <h3 className="text-white text-lg font-semibold text-center mb-6">Pilih Sumber</h3>
+
+                {/* Camera capture button */}
+                {isCameraReady && (
+                  <button
+                    onClick={captureImage}
+                    disabled={isLoading || isCapturing}
+                    className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
+                      isLoading || isCapturing ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                    }`}>
+                    {isLoading || isCapturing ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    ) : (
+                      <Camera size={24} className="text-white" />
+                    )}
+                    <span className="text-white font-medium">{isLoading || isCapturing ? "Memproses..." : "Ambil Foto"}</span>
+                  </button>
+                )}
+
+                {/* File upload button */}
+                <button
+                  onClick={handleFileSelect}
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
+                    isLoading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                  }`}>
+                  <FolderOpen size={24} className="text-white" />
+                  <span className="text-white font-medium">Pilih File</span>
+                </button>
+
+                {/* Cancel button */}
+                <button
+                  onClick={handleCloseCamera}
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
+                    isLoading ? "bg-gray-700 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+                  }`}>
+                  <X size={24} className="text-white" />
+                  <span className="text-white font-medium">Batal</span>
+                </button>
+
+                {/* Info text */}
+                <div className="text-gray-300 text-sm text-center mt-6">
+                  <p>Anda dapat mengambil foto langsung dari kamera atau memilih file dari perangkat Anda.</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {isLoading && (
             <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10">
@@ -470,6 +545,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
               </div>
             </div>
           )}
+
+          {/* Hidden file input */}
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: "none" }} />
 
           <canvas ref={canvasRef} style={{ display: "none" }} />
         </div>
