@@ -4,7 +4,9 @@ import { Item } from "@/types/item.types";
 import api from "@/utils/axios";
 import React, { useState } from "react";
 
-const FoodCardPopup = ({ Name, Type, Amount, AmountType, Desc, StartDate, ExpDate }: Item) => {
+// TODO: change window.confirm to use customized popup
+
+const FoodCardPopup = ({ ID, Name, Type, Amount, AmountType, Desc, StartDate, ExpDate }: Item) => {
   const [name, setName] = useState(Name);
   const [type, setType] = useState(Type);
   const [amount, setAmount] = useState(Amount.toString());
@@ -13,18 +15,30 @@ const FoodCardPopup = ({ Name, Type, Amount, AmountType, Desc, StartDate, ExpDat
   const [expDate, setExpDate] = useState(ExpDate.slice(0, 10));
   const [desc, setDesc] = useState(Desc);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !type || !amount || !amountType || !startDate || !expDate) {
-      alert("Semua field wajib diisi kecuali deskripsi.");
+  const hasChanges =
+    name !== Name ||
+    type !== Type ||
+    amount !== Amount.toString() ||
+    amountType !== AmountType ||
+    startDate !== StartDate.slice(0, 10) ||
+    expDate !== ExpDate.slice(0, 10) ||
+    (desc ?? "") !== (Desc ?? "");
+
+  const updateButtonHandler = async () => {
+    if (!hasChanges) {
+      alert("Tidak ada perubahan data.");
       return;
     }
 
+    const confirm = window.confirm("Apakah Anda yakin ingin memperbarui item ini?");
+    if (!confirm) return;
+
     try {
-      const response = await api.post("/item/create", {
+      const response = await api.put("/item/update", {
+        ID,
         name,
         type,
-        amount,
+        amount: parseFloat(amount),
         amountType,
         desc,
         startDate,
@@ -34,24 +48,32 @@ const FoodCardPopup = ({ Name, Type, Amount, AmountType, Desc, StartDate, ExpDat
       console.log("Response:", response.data);
       alert("Item berhasil ditambahkan!");
 
-      // Clear form after success
-      setName("");
-      setType("");
-      setAmount("");
-      setAmountType("satuan");
-      setStartDate(new Date().toISOString().split("T")[0]);
-      setExpDate("");
-      setDesc("");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error("Error:", err.response?.data || err.message);
+      alert("Gagal memperbarui item.");
+    }
+  };
+
+  const deleteButtonHandler = async () => {
+    const confirm = window.confirm("Apakah Anda yakin ingin menghapus item ini?");
+    if (!confirm) return;
+
+    try {
+      const response = await api.delete(`/item/delete/${ID}`);
+
+      console.log("Response:", response.data);
+      alert("Item berhasil dihapus!");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
-      alert("Gagal menambahkan item.");
+      alert("Gagal menghapus item.");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col justify-center">
+    <div className="flex flex-col justify-center">
       <div className="text-xl font-bold py-2">Detail Item</div>
 
       <div className="flex flex-col gap-3">
@@ -149,15 +171,10 @@ const FoodCardPopup = ({ Name, Type, Amount, AmountType, Desc, StartDate, ExpDat
             <input
               type="date"
               id="expDate"
-              className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-2/3 focus:outline-[#5DB1FF]"
+              className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-full focus:outline-[#5DB1FF]"
               value={expDate}
               onChange={(e) => setExpDate(e.target.value)}
             />
-            <button
-              type="button"
-              className="text-xs text-center min-w-0 w-1/3 py-2 bg-[#5DB1FF] rounded-md text-white font-semibold flex-shrink">
-              Scan
-            </button>
           </div>
         </div>
 
@@ -179,10 +196,21 @@ const FoodCardPopup = ({ Name, Type, Amount, AmountType, Desc, StartDate, ExpDat
 
       {/* Submit */}
       <div className="w-full pt-10 flex gap-5">
-        <button className="text-xs text-center w-1/2 py-2 bg-[#5DB1FF] rounded-md text-white font-semibold">Perbarui</button>
-        <button className="text-xs text-center w-1/2 py-2 bg-red-400 rounded-md text-white font-semibold">Hapus</button>
+        <button
+          className={`text-xs text-center w-1/2 py-2 rounded-md text-white font-semibold ${
+            hasChanges ? "bg-[#5DB1FF] hover:bg-blue-500" : "bg-gray-300 cursor-not-allowed"
+          }`}
+          onClick={updateButtonHandler}
+          disabled={!hasChanges}>
+          Perbarui
+        </button>
+        <button
+          className="text-xs text-center w-1/2 py-2 bg-red-400 rounded-md text-white font-semibold"
+          onClick={deleteButtonHandler}>
+          Hapus
+        </button>
       </div>
-    </form>
+    </div>
   );
 };
 

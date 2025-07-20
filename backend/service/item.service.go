@@ -7,10 +7,12 @@ import (
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
+
 	"github.com/google/uuid"
 )
 
-type CreateItemInput struct {
+type ItemInput struct {
+	ID         uuid.UUID
 	UserID     uuid.UUID
 	Name       string
 	Type       string
@@ -21,7 +23,7 @@ type CreateItemInput struct {
 	ExpDate    string // yyyy-mm-dd
 }
 
-func CreateNewItem(input CreateItemInput) error {
+func CreateNewItem(input ItemInput) error {
 	startDate, err := time.Parse("2006-01-02", input.StartDate)
 	if err != nil {
 		return errors.New("invalid start date format")
@@ -49,4 +51,12 @@ func CreateNewItem(input CreateItemInput) error {
 	}
 
 	return repository.CreateNewItem(item, input.UserID.String())
+}
+
+func UpdateItem(inputItem schema.Item) error {
+	return repository.UpdateItem(inputItem)
+}
+
+func DeleteItem(itemID string) error {
+	return repository.DeleteItem(itemID)
 }
