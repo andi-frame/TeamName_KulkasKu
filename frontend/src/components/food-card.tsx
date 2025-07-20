@@ -15,10 +15,8 @@ export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
     }).format(date);
   }
 
-  function daysLeft() {
-    const exp = new Date(ExpDate);
-    return Math.ceil((exp.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  }
+  const exp = new Date(ExpDate);
+  const daysLeft = Math.ceil((exp.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
   return (
     <div className="relative w-full max-w-md rounded-lg shadow-md">
@@ -35,7 +33,11 @@ export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
             <div className="flex flex-col">
               <div className="text-base font-medium">{Name}</div>
               <div className="text-[10px]">dari {formattedDate()}</div>
-              <div className="text-[10px]">kedaluwarsa dalam {daysLeft()} hari</div>
+              {daysLeft > 0 ? (
+                <div className="text-[10px]">kedaluwarsa dalam {daysLeft} hari</div>
+              ) : (
+                <div className="text-[10px]">kedaluwarsa sejak {daysLeft} hari lalu</div>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-5">
