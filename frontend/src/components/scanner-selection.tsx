@@ -1,10 +1,6 @@
 import React from "react";
 import { Barcode, Fullscreen, ReceiptText } from "lucide-react";
-
-interface ScannerSelectionProps {
-  onSelect: (type: "barcode" | "image" | "receipt") => void;
-  onClose: () => void;
-}
+import { ScannerSelectionProps } from "@/types/scanner.types";
 
 export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
   return (
