@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -64,10 +65,10 @@ const Page = () => {
 
   return (
     <div className="w-full p-4 flex flex-col justify-start gap-3">
-      <div className="flex gap-1 items-center">
+      <Link href="/fridge" className="flex gap-1 items-center">
         <ChevronLeft size={35} strokeWidth={1} />
         <span className="text-md font-extralight">Tambah Item</span>
-      </div>
+      </Link>
 
       <form onSubmit={handleSubmit} className="flex flex-col justify-center pt-6">
         <div className="text-xl font-bold py-5">Tambahkan Item</div>
