@@ -21,13 +21,18 @@ const Page = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name || !type || !amount || !amountType || !startDate || !expDate) {
+      alert("Semua field wajib diisi kecuali deskripsi.");
+      return;
+    }
+
     try {
       const response = await axios.post(
         "http://localhost:5000/item/create",
         {
           name,
           type,
-          amount,
+          amount: parseFloat(amount),
           amountType,
           desc,
           startDate,
@@ -40,6 +45,16 @@ const Page = () => {
 
       console.log("Response:", response.data);
       alert("Item berhasil ditambahkan!");
+
+      // Clear form after success
+      setName("");
+      setType("");
+      setAmount("");
+      setAmountType("satuan");
+      setStartDate(new Date().toISOString().split("T")[0]);
+      setExpDate("");
+      setDesc("");
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
