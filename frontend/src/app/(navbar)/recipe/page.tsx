@@ -1,12 +1,14 @@
 "use client";
 
 import RecipeCard from "@/components/recipe/recipe-card";
+import RecipeHeader from "@/components/recipe/recipe-header";
 import React from "react";
 
 const Page = () => {
   return (
     <>
       <div>
+        <RecipeHeader />
         <div className="flex flex-wrap w-full">
           {data.map((recipe, index) => (
             <div key={recipe.id + index} className="w-1/2 p-2">
