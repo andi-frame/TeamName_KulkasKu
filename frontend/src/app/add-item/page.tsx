@@ -6,7 +6,20 @@ import Link from "next/link";
 import api from "@/utils/axios";
 import { FoodScanner } from "@/components/food-scanner";
 import { AIResultModal } from "@/components/ai-result-modal";
-import { BarcodeResult, ImagePredictionResult } from "@/types/scanner.types";
+import { ReceiptItemSelectionModal } from "@/components/receipt-item-selection";
+import { ItemFormModal } from "@/components/item-form-modal";
+import { ContinueReceiptModal } from "@/components/continue-receipt-modal";
+import { BarcodeResult, ImagePredictionResult, ReceiptResult, ReceiptItem } from "@/types/scanner.types";
+
+interface ItemFormData {
+  name: string;
+  type: string;
+  amount: number;
+  amountType: string;
+  startDate: string;
+  expDate: string;
+  desc: string;
+}
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -19,6 +32,14 @@ const Page = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [showAIResult, setShowAIResult] = useState(false);
   const [aiResult, setAiResult] = useState<ImagePredictionResult | null>(null);
+
+  const [showReceiptItemSelection, setShowReceiptItemSelection] = useState(false);
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [showContinueReceipt, setShowContinueReceipt] = useState(false);
+  const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
+  const [processedItemIndexes, setProcessedItemIndexes] = useState<number[]>([]);
+  const [currentItem, setCurrentItem] = useState<ReceiptItem | null>(null);
+  const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const today = new Date();
@@ -63,6 +84,79 @@ const Page = () => {
   const handleCancelAIResult = () => {
     setShowAIResult(false);
     setAiResult(null);
+  };
+
+  const handleReceiptResult = (result: ReceiptResult) => {
+    if (!result || !Array.isArray(result.items)) {
+      console.error("Invalid receipt result structure:", result);
+      alert("Format data receipt tidak valid");
+      return;
+    }
+
+    console.log("Processing receipt result:", result);
+
+    setReceiptItems(result.items);
+    setProcessedItemIndexes([]);
+    setShowReceiptItemSelection(true);
+    setShowScanner(false);
+  };
+
+  const handleSelectReceiptItem = (item: ReceiptItem, filteredIndex: number) => {
+    const availableItems = receiptItems.filter((_, index) => !processedItemIndexes.includes(index));
+    const selectedItem = availableItems[filteredIndex];
+    const originalIndex = receiptItems.findIndex((originalItem) => originalItem === selectedItem);
+
+    setCurrentItem(item);
+    setCurrentItemIndex(originalIndex);
+    setShowReceiptItemSelection(false);
+    setShowItemForm(true);
+  };
+
+  const handleCancelReceiptItemSelection = () => {
+    setShowReceiptItemSelection(false);
+    setReceiptItems([]);
+    setProcessedItemIndexes([]);
+  };
+
+  const handleSubmitItemForm = async (formData: ItemFormData) => {
+    try {
+      const response = await api.post("/item/create", formData);
+      console.log("Response:", response.data);
+
+      if (currentItemIndex !== null) {
+        setProcessedItemIndexes((prev) => [...prev, currentItemIndex]);
+      }
+
+      setShowItemForm(false);
+      setCurrentItem(null);
+      setCurrentItemIndex(null);
+
+      setShowContinueReceipt(true);
+    } catch (err: unknown) {
+      console.error("Error:", err);
+      alert("Gagal menambahkan item.");
+    }
+  };
+
+  const handleCancelItemForm = () => {
+    setShowItemForm(false);
+    setCurrentItem(null);
+    setCurrentItemIndex(null);
+    setShowReceiptItemSelection(true);
+  };
+
+  const handleContinueReceipt = () => {
+    setShowContinueReceipt(false);
+    setShowReceiptItemSelection(true);
+  };
+
+  const handleFinishReceipt = () => {
+    setShowContinueReceipt(false);
+    setReceiptItems([]);
+    setProcessedItemIndexes([]);
+    setCurrentItem(null);
+    setCurrentItemIndex(null);
+    alert("Semua item dari struk telah diproses!");
   };
 
   const handleCloseScannerPopup = () => {
@@ -241,11 +335,35 @@ const Page = () => {
 
       {/* Scanner Popup */}
       {showScanner && (
-        <FoodScanner onImageResult={handleImageResult} onBarcodeResult={handleBarcodeResult} onClose={handleCloseScannerPopup} />
+        <FoodScanner
+          onImageResult={handleImageResult}
+          onBarcodeResult={handleBarcodeResult}
+          onReceiptResult={handleReceiptResult}
+          onClose={handleCloseScannerPopup}
+        />
       )}
 
       {/* AI Result Modal */}
       <AIResultModal isOpen={showAIResult} result={aiResult} onAccept={handleAcceptAIResult} onCancel={handleCancelAIResult} />
+
+      {/* Receipt Item Selection Modal */}
+      <ReceiptItemSelectionModal
+        isOpen={showReceiptItemSelection}
+        items={receiptItems.filter((_, index) => !processedItemIndexes.includes(index))}
+        onSelectItem={handleSelectReceiptItem}
+        onCancel={handleCancelReceiptItemSelection}
+      />
+
+      {/* Item Form Modal */}
+      <ItemFormModal isOpen={showItemForm} item={currentItem} onSubmit={handleSubmitItemForm} onCancel={handleCancelItemForm} />
+
+      {/* Continue Receipt Modal */}
+      <ContinueReceiptModal
+        isOpen={showContinueReceipt}
+        remainingItemsCount={receiptItems.length - processedItemIndexes.length}
+        onContinue={handleContinueReceipt}
+        onFinish={handleFinishReceipt}
+      />
     </div>
   );
 };

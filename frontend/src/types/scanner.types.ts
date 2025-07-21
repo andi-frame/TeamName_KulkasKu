@@ -15,13 +15,15 @@ export interface ImagePredictionResult {
 export interface ReceiptItem {
   name: string;
   quantity: number;
-  price?: number;
+  price: number;
+  confidence: number;
 }
 
 export interface ReceiptResult {
   items: ReceiptItem[];
   total_items: number;
   confidence: number;
+  processing_time?: string;
 }
 
 export interface FoodScannerProps {

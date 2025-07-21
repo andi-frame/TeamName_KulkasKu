@@ -326,9 +326,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
       const result = response.data;
 
-      if (result) {
-        console.log("Receipt analysis result:", result);
-        onReceiptResult?.(result);
+      if (result && result.success && result.data) {
+        console.log("Receipt analysis result:", result.data);
+        onReceiptResult?.(result.data); 
         handleCloseCamera();
       } else {
         alert("Failed to analyze receipt");
@@ -445,7 +445,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
                 {!isCameraReady && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black bg-opacity-75 text-white p-4 rounded-lg flex flex-col items-center">
+                    <div className="bg-black/75 text-white p-4 rounded-lg flex flex-col items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
                       <p>Memuat kamera...</p>
                     </div>
@@ -469,7 +469,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
                 {(scannerType === "image" || scannerType === "receipt") && isCameraReady && (
                   <div className="absolute top-4 left-4 right-4 text-center">
-                    <div className="bg-black bg-opacity-75 text-white p-3 rounded-lg">
+                    <div className="bg-black/75 text-white p-3 rounded-lg">
                       {scannerType === "image"
                         ? "Posisikan produk dalam frame dan tekan tombol foto"
                         : "Posisikan struk dalam frame dan tekan tombol foto"}
@@ -532,7 +532,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
           </div>
 
           {isLoading && (
-            <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-black/75 flex items-center justify-center z-10">
               <div className="bg-white rounded-lg p-6 flex flex-col items-center space-y-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="text-gray-700 font-medium">
