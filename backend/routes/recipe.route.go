@@ -12,5 +12,6 @@ func RecipeRoute(r *gin.Engine, cfg config.Config) {
 	recipeRoutes.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 
 	recipeRoutes.GET("/all", controller.AllRecipesHandler)
+	recipeRoutes.GET("/detail/:slug", controller.DetailRecipeHandler)
 	// recipeRoutes.GET("/search", controller.SearchRecipeHandler)
 }

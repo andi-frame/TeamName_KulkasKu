@@ -31,7 +31,7 @@ type RecipeDetail struct {
 	CoverURL        string           `json:"cover_url"`
 	CoverWatermark  string           `json:"cover_url_watermark"`
 	Description     string           `json:"description"`
-	Rating          int              `json:"rating"`
+	Rating          float64          `json:"rating"`
 	VideoURL        string           `json:"video_url"`
 	Price           int              `json:"price"`
 	PricePremium    int              `json:"price_premium"`
@@ -44,7 +44,7 @@ type RecipeDetail struct {
 	UpdatedDate     int64            `json:"updated_date"`
 	IsBookmark      bool             `json:"is_bookmark"`
 	IsEditorial     bool             `json:"is_editorial"`
-	RatingUser      int              `json:"rating_user"`
+	RatingUser      float64          `json:"rating_user"`
 	IsVideo         bool             `json:"is_video"`
 	PremiumContent  bool             `json:"premium_content"`
 	BrandSlug       string           `json:"brand_slug"`
@@ -71,4 +71,10 @@ type RecipeDetail struct {
 	CookingTool     []interface{}    `json:"cooking_tool"`
 	TipsAndTrick    []interface{}    `json:"tips_and_trick"`
 	PurchaseDetail  []interface{}    `json:"purchase_detail"`
+}
+
+type RecipeDetailResponse struct {
+	Status  int          `json:"status"`
+	Message string       `json:"message"`
+	Data    RecipeDetail `json:"data"`
 }

@@ -10,7 +10,15 @@ const Page = () => {
   const router = useRouter();
   const { recipeDetail } = useRecipeStore();
 
-  if (!recipeDetail) return <p>No detail found</p>;
+  if (!recipeDetail)
+    return (
+      <>
+        <div className="flex pt-6" onClick={() => router.back()}>
+          <ChevronLeft /> <span>Kembali</span>
+        </div>
+        <p>No detail found</p>
+      </>
+    );
 
   const {
     title,
@@ -37,7 +45,7 @@ const Page = () => {
 
   return (
     <>
-      <div className="flex" onClick={() => router.back()}>
+      <div className="flex pt-6" onClick={() => router.back()}>
         <ChevronLeft /> <span>Kembali</span>
       </div>
       <div className="max-w-2xl mx-auto p-4 space-y-6">
@@ -71,36 +79,38 @@ const Page = () => {
 
         <div>
           <h2 className="text-md font-semibold mt-4">🧂 Bahan-Bahan</h2>
-          {ingredient_type.map((group, i) => (
-            <div key={i} className="mt-2">
-              <p className="font-semibold text-sm">{group.name}</p>
-              <ul className="list-disc list-inside text-sm text-gray-700">
-                {group.ingredients.map((item, idx) => (
-                  <li key={idx}>{item.description}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {!!ingredient_type &&
+            ingredient_type.map((group, i) => (
+              <div key={i} className="mt-2">
+                <p className="font-semibold text-sm">{group.name}</p>
+                <ul className="list-disc list-inside text-sm text-gray-700">
+                  {group.ingredients.map((item, idx) => (
+                    <li key={idx}>{item.description}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
         </div>
 
         <div>
           <h2 className="text-md font-semibold mt-4">👨‍🍳 Cara Membuat</h2>
           <ol className="space-y-4 mt-2">
-            {cooking_step.map((step, i) => (
-              <li key={i} className="rounded p-4 shadow-md ring-1 ring-gray-200 max-w-sm">
-                <p className="font-medium">{step.title}</p>
-                <p className="text-sm text-gray-700">{step.text}</p>
-                {step.image_url && (
-                  <Image
-                    src={`https://cdn.yummy.co.id/${step.image_url}`}
-                    alt={`Step ${step.order}`}
-                    width={300}
-                    height={300}
-                    className="mt-2 rounded object-cover"
-                  />
-                )}
-              </li>
-            ))}
+            {!!cooking_step &&
+              cooking_step.map((step, i) => (
+                <li key={i} className="rounded p-4 shadow-md ring-1 ring-gray-200 max-w-sm">
+                  <p className="font-medium">{step.title}</p>
+                  <p className="text-sm text-gray-700">{step.text}</p>
+                  {step.image_url && (
+                    <Image
+                      src={`https://cdn.yummy.co.id/${step.image_url}`}
+                      alt={`Step ${step.order}`}
+                      width={300}
+                      height={300}
+                      className="mt-2 rounded object-cover"
+                    />
+                  )}
+                </li>
+              ))}
           </ol>
         </div>
 
