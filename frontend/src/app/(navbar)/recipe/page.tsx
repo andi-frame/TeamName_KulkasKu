@@ -1,7 +1,9 @@
+"use client";
+
 import RecipeCard from "@/components/recipe/recipe-card";
 import React from "react";
 
-const page = () => {
+const Page = () => {
   return (
     <>
       <div>
@@ -17,7 +19,7 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
 
 const data = [
   {
