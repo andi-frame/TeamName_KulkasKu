@@ -96,7 +96,7 @@ func (rs *receiptService) AnalyzeReceipt(imageData []byte) (*ReceiptResult, erro
 
 	// Periksa apakah request berhasil
 	if !pythonResp.Success {
-		return nil, fmt.Errorf("Python service error: %s", pythonResp.Error)
+		return nil, fmt.Errorf("python service error: %s", pythonResp.Error)
 	}
 
 	// Konversi ke format yang diharapkan
