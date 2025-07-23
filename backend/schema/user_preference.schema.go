@@ -22,11 +22,6 @@ type UserPreference struct {
 	PriceRange          string   `gorm:"default:affordable"` // budget, affordable, premium
 	ServingPreference   int      `gorm:"default:2"`          // Preferred serving size
 
-	// Time-based preferences
-	BreakfastScore float64 `gorm:"default:0.5"`
-	LunchScore     float64 `gorm:"default:0.5"`
-	DinnerScore    float64 `gorm:"default:0.5"`
-
 	// Ingredient preferences (top ingredients user often uses)
 	PreferredIngredients []string `gorm:"type:text[]"`
 	DislikedIngredients  []string `gorm:"type:text[]"`
@@ -47,8 +42,7 @@ type UserActivity struct {
 	ActivityType string `gorm:"index"` // "view", "detail_view", "cooked", "bookmarked"
 
 	// Interaction metrics
-	ViewDuration int    `gorm:"default:0"`     // Seconds spent viewing
-	TimeOfDay    string `gorm:"default:lunch"` // breakfast, lunch, dinner, snack
+	ViewDuration int `gorm:"default:0"` // Seconds spent viewing
 
 	// Recipe data snapshot (for learning)
 	RecipeTags     []string `gorm:"type:text[]"`

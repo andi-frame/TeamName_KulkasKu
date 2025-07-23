@@ -36,7 +36,6 @@ func (s *RecommendationService) TrackRecipeInteraction(userID uuid.UUID, recipeI
 		RecipeID:     recipeID,
 		ActivityType: activityType,
 		ViewDuration: viewDuration,
-		TimeOfDay:    s.getCurrentMealTime(),
 		SessionID:    fmt.Sprintf("%s_%d", userID.String(), time.Now().Unix()),
 	}
 
@@ -496,10 +495,7 @@ func (s *RecommendationService) createDefaultPreference(userID uuid.UUID) *schem
 		AvgCookingTime:    30,
 		AvgCalories:       400,
 		PriceRange:        "10k-30k",
-		ServingPreference: 2,
-		BreakfastScore:    0.5,
-		LunchScore:        0.5,
-		DinnerScore:       0.5,
+		ServingPreference: 1,
 		LastUpdated:       time.Now(),
 	}
 }
@@ -538,7 +534,6 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 	tagFreq := make(map[string]int)
 	totalCookingTime := 0
 	cookingTimeCount := 0
-	timeOfDayCount := make(map[string]int)
 
 	for _, activity := range activities {
 		// Weight recent activities higher
@@ -554,9 +549,6 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 			totalCookingTime += int(float64(activity.CookingTime) * weight)
 			cookingTimeCount++
 		}
-
-		// Time of day preferences
-		timeOfDayCount[activity.TimeOfDay]++
 	}
 
 	// Update preferred tags (top 10)
@@ -585,14 +577,6 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 	// Update average cooking time
 	if cookingTimeCount > 0 {
 		pref.AvgCookingTime = totalCookingTime / cookingTimeCount
-	}
-
-	// Update time of day scores
-	total := len(activities)
-	if total > 0 {
-		pref.BreakfastScore = float64(timeOfDayCount["breakfast"]) / float64(total)
-		pref.LunchScore = float64(timeOfDayCount["lunch"]) / float64(total)
-		pref.DinnerScore = float64(timeOfDayCount["dinner"]) / float64(total)
 	}
 
 	pref.LastUpdated = time.Now()
