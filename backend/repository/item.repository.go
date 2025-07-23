@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"strings"
 	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
@@ -25,7 +26,7 @@ func GetAllFreshItem(userID string) ([]schema.Item, error) {
 	return items, nil
 }
 
-func GetAllFreshItemByName(userID string, name string) ([]schema.Item, error) {
+func GetFilteredFreshItem(userID string, name string, startDate, expDate *time.Time, itemType string) ([]schema.Item, error) {
 	var items []schema.Item
 
 	query := database.DB.
@@ -34,6 +35,18 @@ func GetAllFreshItemByName(userID string, name string) ([]schema.Item, error) {
 
 	if name != "" {
 		query = query.Where("name ILIKE ?", "%"+name+"%")
+	}
+
+	if startDate != nil {
+		query = query.Where("start_date >= ?", *startDate)
+	}
+
+	if expDate != nil {
+		query = query.Where("exp_date <= ?", *expDate)
+	}
+
+	if itemType != "" && itemType != "Semua" {
+		query = query.Where("type = ?", strings.ToLower(itemType))
 	}
 
 	result := query.Order("exp_date ASC").Find(&items)
@@ -53,7 +66,7 @@ func GetAllExpiredItem(userID string) ([]schema.Item, error) {
 	return items, nil
 }
 
-func GetAllExpiredItemByName(userID string, name string) ([]schema.Item, error) {
+func GetFilteredExpiredItem(userID string, name string, startDate, expDate *time.Time, itemType string) ([]schema.Item, error) {
 	var items []schema.Item
 
 	query := database.DB.
@@ -62,6 +75,18 @@ func GetAllExpiredItemByName(userID string, name string) ([]schema.Item, error) 
 
 	if name != "" {
 		query = query.Where("name ILIKE ?", "%"+name+"%")
+	}
+
+	if startDate != nil {
+		query = query.Where("start_date >= ?", *startDate)
+	}
+
+	if expDate != nil {
+		query = query.Where("exp_date <= ?", *expDate)
+	}
+
+	if itemType != "" && itemType != "Semua" {
+		query = query.Where("type = ?", strings.ToLower(itemType))
 	}
 
 	result := query.Order("exp_date DESC").Find(&items)
