@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kulkasku-backend
+    env: docker
+    repo: https://github.com/andi-frame/TeamName_KulkasKu
+    region: singapore
+    branch: main
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 5000
