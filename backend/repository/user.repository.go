@@ -1,31 +1,50 @@
 package repository
 
 import (
+	"errors"
 	"log"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
-	"gorm.io/gorm/clause"
+	"gorm.io/gorm"
 )
 
 func UpsertUserAccount(userInfo schema.UserAuthType) (*schema.User, error) {
+	var user schema.User
 
-	user := schema.User{
-		ImageURL: userInfo.Picture,
-		Name:     userInfo.Name,
-		Email:    userInfo.Email,
+	result := database.DB.Where("email = ?", userInfo.Email).First(&user)
+
+	if result.Error == nil {
+		// User exists
+		user.Name = userInfo.Name
+		user.ImageURL = userInfo.Picture
+
+		if err := database.DB.Save(&user).Error; err != nil {
+			log.Printf("Error updating user: %v", err)
+			return nil, err
+		}
+		log.Printf("Successfully updated user: %s with email %s", user.ID, user.Email)
+		return &user, nil
 	}
 
-	result := database.DB.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "email"}},
-		DoUpdates: clause.AssignmentColumns([]string{"name", "image_url"}),
-	}).Create(&user)
-
-	if result.Error != nil {
-		log.Printf("Error during upsert user: %v", result.Error)
+	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		// Some other error
+		log.Printf("DB error finding user: %v", result.Error)
 		return nil, result.Error
 	}
 
-	log.Printf("Successfully upserted user with email: %s", user.Email)
+	// No user found, create new
+	user = schema.User{
+		Name:     userInfo.Name,
+		Email:    userInfo.Email,
+		ImageURL: userInfo.Picture,
+	}
+
+	if err := database.DB.Create(&user).Error; err != nil {
+		log.Printf("Error creating user: %v", err)
+		return nil, err
+	}
+
+	log.Printf("Successfully created user: %s with email %s", user.ID, user.Email)
 	return &user, nil
 }
