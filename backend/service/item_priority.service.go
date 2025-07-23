@@ -38,8 +38,10 @@ func (s *RecommendationService) buildSearchKeywords(items []schema.Item) string 
 		}
 
 		priority := s.calculateItemPriority(item, now, maxQuantity)
+		formattedName := strings.ToLower(strings.ReplaceAll(item.Name, " ", "-"))
+
 		itemPriorities = append(itemPriorities, ItemPriority{
-			Name:     strings.ToLower(item.Name),
+			Name:     formattedName,
 			Priority: priority,
 		})
 	}

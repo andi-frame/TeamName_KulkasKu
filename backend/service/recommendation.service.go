@@ -241,7 +241,7 @@ func (s *RecommendationService) GetRecommendations(userID uuid.UUID, limit int) 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			userPref = s.createDefaultPreference(userID)
 		} else {
-			return nil, err // return real error
+			return nil, err
 		}
 	}
 

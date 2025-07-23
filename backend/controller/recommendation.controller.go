@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -66,6 +67,7 @@ func (c *RecommendationController) GetRecommendations(ctx *gin.Context) {
 
 	recipes, err := c.service.GetRecommendations(userId, limit)
 	if err != nil {
+		fmt.Println("Error getting recommendations:", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get recommendations"})
 		return
 	}
