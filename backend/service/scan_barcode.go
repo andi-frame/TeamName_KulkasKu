@@ -45,7 +45,7 @@ func (ps *productService) GetProductByBarcode(barcode string) (*ProductInfo, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Open Food Facts API returned status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("open Food Facts API returned status code: %d", resp.StatusCode)
 	}
 
 	var openFoodFactsResp OpenFoodFactsResponse

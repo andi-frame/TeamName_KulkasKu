@@ -9,8 +9,9 @@ import (
 
 func RecipeRoute(r *gin.Engine, cfg config.Config) {
 	recipeRoutes := r.Group("/recipe")
-	recipeRoutes.Use(middleware.JWTMiddleware(cfg.JWTSecret))
+	recipeRoutes.Use(middleware.JWTMiddleware())
 
 	recipeRoutes.GET("/all", controller.AllRecipesHandler)
+	recipeRoutes.GET("/detail/:slug", controller.DetailRecipeHandler)
 	// recipeRoutes.GET("/search", controller.SearchRecipeHandler)
 }

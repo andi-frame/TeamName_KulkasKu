@@ -1,16 +1,15 @@
-import { FoodCard } from "@/components/food-card";
-import { ExpiredGroup } from "./expired-group";
+// import { FoodCard } from "@/components/food-card";
 
-export default function Fridge() {
+import ExpiredGroup from "@/components/fridge/expired-group";
+import FreshGroup from "@/components/fridge/fresh-group";
+
+export default function Fridge() { 
+
+
   return (
-    <div className="">
+    <div className="pb-28">
       <ExpiredGroup/>
-      <FoodCard
-        foodName="Bayam"
-        amount="2 ikat"
-        createdAt={new Date(Date.now())}
-        expiredAt={new Date(Date.now())}
-      />
+      <FreshGroup />
     </div>
   );
 }

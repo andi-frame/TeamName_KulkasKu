@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"time"
 )
 
@@ -31,7 +32,6 @@ type receiptService struct {
 	httpClient       *http.Client
 }
 
-// Response dari Python 
 type PythonReceiptResponse struct {
 	Success bool `json:"success"`
 	Data    struct {
@@ -55,8 +55,10 @@ func (rs *receiptService) AnalyzeReceipt(imageData []byte) (*ReceiptResult, erro
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	// Tambahkan file gambar ke form
-	part, err := writer.CreateFormFile("file", "receipt.jpg")
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", `form-data; name="file"; filename="receipt.jpg"`)
+	h.Set("Content-Type", "image/jpeg")
+	part, err := writer.CreatePart(h)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}
@@ -94,7 +96,7 @@ func (rs *receiptService) AnalyzeReceipt(imageData []byte) (*ReceiptResult, erro
 
 	// Periksa apakah request berhasil
 	if !pythonResp.Success {
-		return nil, fmt.Errorf("Python service error: %s", pythonResp.Error)
+		return nil, fmt.Errorf("python service error: %s", pythonResp.Error)
 	}
 
 	// Konversi ke format yang diharapkan

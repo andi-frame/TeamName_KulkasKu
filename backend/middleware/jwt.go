@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,7 +14,9 @@ type JWTUserData struct {
 	Name  string
 }
 
-func JWTMiddleware(jwtSecret string) gin.HandlerFunc {
+func JWTMiddleware() gin.HandlerFunc {
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("token")
 		if err != nil {

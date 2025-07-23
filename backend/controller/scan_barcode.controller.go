@@ -48,6 +48,7 @@ func (pc *ProductController) GetProductInfoByBarcodeHandler(ctx *gin.Context) {
 		"success": true,
 		"data": gin.H{
 			"name": productInfo.Name,
+			"barcode": barcode,
 		},
 	})
 }

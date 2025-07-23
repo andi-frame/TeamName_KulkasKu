@@ -11,6 +11,7 @@ class PredictResponse(BaseModel):
     item_name: str
     condition_description: str
     predicted_remaining_days: int
+    reasoning: str
     confidence: float
 
 class ReceiptItem(BaseModel):
