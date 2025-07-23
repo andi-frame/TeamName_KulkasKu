@@ -476,18 +476,6 @@ func (s *RecommendationService) searchRecipes(keywords string, limit int) ([]sch
 }
 
 // Utility functions
-func (s *RecommendationService) getCurrentMealTime() string {
-	hour := time.Now().Hour()
-	if hour >= 5 && hour < 10 {
-		return "breakfast"
-	} else if hour >= 10 && hour < 15 {
-		return "lunch"
-	} else if hour >= 15 && hour < 21 {
-		return "dinner"
-	}
-	return "snack"
-}
-
 func (s *RecommendationService) createDefaultPreference(userID uuid.UUID) *schema.UserPreference {
 	return &schema.UserPreference{
 		BaseModel:         schema.BaseModel{ID: uuid.New()},
@@ -538,6 +526,15 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 	for _, activity := range activities {
 		// Weight recent activities higher
 		weight := s.calculateActivityWeight(activity.CreatedAt)
+
+		switch activity.ActivityType {
+		case "cooked":
+			weight *= 2.0 // 2x boost
+		case "detail_view":
+			// Scale view duration impact (0-100% boost)
+			viewImpact := math.Min(1.0, float64(activity.ViewDuration)/300.0)
+			weight *= (1.0 + viewImpact) // Up to 2x boost
+		}
 
 		// Collect tags
 		for _, tag := range activity.RecipeTags {

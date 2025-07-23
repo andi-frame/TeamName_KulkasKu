@@ -39,7 +39,7 @@ type UserActivity struct {
 	RecipeID     string `gorm:"index"` // Recipe ID from API
 	RecipeTitle  string
 	RecipeSlug   string
-	ActivityType string `gorm:"index"` // "view", "detail_view", "cooked", "bookmarked"
+	ActivityType string `gorm:"index"` // "detail_view", "cooked"
 
 	// Interaction metrics
 	ViewDuration int `gorm:"default:0"` // Seconds spent viewing
