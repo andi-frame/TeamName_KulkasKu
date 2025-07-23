@@ -21,9 +21,9 @@ func NewRecommendationController(service *service.RecommendationService) *Recomm
 // POST /recipe/track
 func (c *RecommendationController) TrackRecipeInteraction(ctx *gin.Context) {
 	var req struct {
-		RecipeID     string                 `json:"recipe_id" binding:"required"`
-		ActivityType string                 `json:"activity_type" binding:"required"` // "view", "detail_view", "cooked"
-		ViewDuration int                    `json:"view_duration"`
+		RecipeID     string         `json:"recipe_id" binding:"required"`
+		ActivityType string         `json:"activity_type" binding:"required"` // "view", "detail_view", "cooked"
+		ViewDuration int            `json:"view_duration"`
 		RecipeData   map[string]any `json:"recipe_data"`
 	}
 
