@@ -6,25 +6,42 @@ import api from "@/utils/axios";
 import { Item } from "@/types/item.types";
 import Popup from "../popup";
 import FoodCardPopup from "./food-card-popup";
+import { useSearchStore } from "@/store/useSearchStore";
 
 export default function FreshGroup() {
   const [freshItems, setFreshItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const searchValue = useSearchStore((state) => state.searchValue);
 
   // API Call
   useEffect(() => {
-    const getAllFreshItems = async () => {
-      try {
-        const response = await api.get("/item/fresh");
-        const data = response.data.data;
-        setFreshItems(data);
-      } catch (error) {
-        console.error("Error fetching fresh items:", error);
-      }
-    };
-
-    getAllFreshItems();
-  }, []);
+    if (searchValue) {
+      const getSearchFreshItem = async () => {
+        try {
+          const response = await api.get("/item/fresh/search", {
+            params: { name: searchValue }
+          });
+          const data = response.data.data;
+          setFreshItems(data);
+          console.log(data);
+        } catch (error) {
+          console.error("Error fetching fresh items:", error);
+        }
+      };
+      getSearchFreshItem();
+    } else {
+      const getAllFreshItems = async () => {
+        try {
+          const response = await api.get("/item/fresh");
+          const data = response.data.data;
+          setFreshItems(data);
+        } catch (error) {
+          console.error("Error fetching fresh items:", error);
+        }
+      };
+      getAllFreshItems();
+    }
+  }, [searchValue]);
 
   return (
     <>
