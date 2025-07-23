@@ -4,7 +4,11 @@ import (
 	"net/http"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/controller"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/routes"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -34,6 +38,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.ReceiptRoute(r, cfg)
 	routes.RecipeRoute(r, cfg)
 	routes.ItemRoute(r, cfg)
+
+	// Recommendation route setup
+	recRepository := repository.NewRecommendationRepository(database.DB)
+	recService := service.NewRecommendationService(recRepository)
+	recController := controller.NewRecommendationController(recService)
+	routes.RecommendationRoute(r, recController)
 
 	return r
 }

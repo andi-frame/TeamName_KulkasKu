@@ -11,8 +11,8 @@ const Page = () => {
 
   useEffect(() => {
     const getAllRecipes = async () => {
-      const res = await api.get("/recipe/all");
-      setRecipes(res.data);
+      const res = await api.get("/recipe/recommendations");
+      setRecipes(res.data.data);
     };
     getAllRecipes();
   }, [setRecipes]);

@@ -22,6 +22,8 @@ func Init() {
 	err = DB.AutoMigrate(
 		&schema.User{},
 		&schema.Item{},
+		&schema.UserActivity{},
+		&schema.UserPreference{},
 		// &schema.Recipe{},
 		// &schema.RecipeStep{},
 		// &schema.Ingredient{},

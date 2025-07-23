@@ -16,7 +16,7 @@ func ItemRoute(r *gin.Engine, cfg config.Config) {
 	})
 	r.Use(gin.Logger())
 	itemRoutes := r.Group("/item")
-	itemRoutes.Use(middleware.JWTMiddleware(cfg.JWTSecret))
+	itemRoutes.Use(middleware.JWTMiddleware())
 
 	itemRoutes.POST("/create", controller.CreateNewItemHandler)
 	itemRoutes.GET("/all", controller.GetAllItemHandler)

@@ -10,13 +10,13 @@ type CookingStep struct {
 }
 
 type Ingredient struct {
-	Description           string      `json:"description"`
-	Recommendation        string      `json:"recommendation"`
-	Brand                 string      `json:"brand"`
-	BuyURL                string      `json:"buy_url"`
-	MediaURL              string      `json:"media_url"`
-	RecomendationMediaURL string      `json:"recomendation_media_url"`
-	RelatedRecipe         interface{} `json:"related_recipe"`
+	Description           string `json:"description"`
+	Recommendation        string `json:"recommendation"`
+	Brand                 string `json:"brand"`
+	BuyURL                string `json:"buy_url"`
+	MediaURL              string `json:"media_url"`
+	RecomendationMediaURL string `json:"recomendation_media_url"`
+	RelatedRecipe         any    `json:"related_recipe"`
 }
 
 type IngredientType struct {
@@ -63,14 +63,14 @@ type RecipeDetail struct {
 	CookingStep     []CookingStep    `json:"cooking_step"`
 	Tags            []Tag            `json:"tags"`
 	TagIngredients  []Tag            `json:"tag_ingredients"`
-	RecipeInfo      []interface{}    `json:"recipe_info"`
+	RecipeInfo      []any            `json:"recipe_info"`
 	Author          Author           `json:"author"`
 	IngredientType  []IngredientType `json:"ingredient_type"`
-	Nutrition       []interface{}    `json:"nutrition"`
-	Recook          []interface{}    `json:"recook"`
-	CookingTool     []interface{}    `json:"cooking_tool"`
-	TipsAndTrick    []interface{}    `json:"tips_and_trick"`
-	PurchaseDetail  []interface{}    `json:"purchase_detail"`
+	Nutrition       []any            `json:"nutrition"`
+	Recook          []any            `json:"recook"`
+	CookingTool     []any            `json:"cooking_tool"`
+	TipsAndTrick    []any            `json:"tips_and_trick"`
+	PurchaseDetail  []any            `json:"purchase_detail"`
 }
 
 type RecipeDetailResponse struct {
