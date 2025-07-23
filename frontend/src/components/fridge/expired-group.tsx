@@ -15,6 +15,9 @@ export default function ExpiredGroup() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const searchValue = useSearchStore((state) => state.searchValue);
+  const startDate = useSearchStore((state) => state.startDate);
+  const expDate = useSearchStore((state) => state.expDate);
+  const itemType = useSearchStore((state) => state.itemType);
 
   const cardHeight = 80;
   const expandedGap = 10;
@@ -22,11 +25,16 @@ export default function ExpiredGroup() {
 
   // API Call
   useEffect(() => {
-    if (searchValue) {
+    if (searchValue || startDate || expDate) {
       const getSearchedExpiredItems = async () => {
         try {
           const response = await api.get("/item/expired/search", {
-            params: { name: searchValue }
+            params: { 
+              name: searchValue,
+              start: startDate,
+              exp: expDate,
+              itemType: itemType
+             }
           });
           const data = response.data.data;
           setExpiredItems(data);
@@ -44,7 +52,11 @@ export default function ExpiredGroup() {
     } else {
       const getAllExpiredItems = async () => {
         try {
-          const response = await api.get("/item/expired");
+          const response = await api.get("/item/expired", {
+            params: {
+              itemType: itemType
+            }
+          });
           const data = response.data.data;
           setExpiredItems(data);
   

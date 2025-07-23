@@ -5,8 +5,12 @@ import { Search, ArrowDownWideNarrow, X } from "lucide-react";
 import { useState } from "react";
 import { useSearchStore } from "@/store/useSearchStore";
 
+import Popup from "./popup";
+import FilterPopUp from "./filter-popup";
+
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const setSearchValue = useSearchStore((state) => state.setSearchValue);
 
@@ -57,15 +61,20 @@ export function Header() {
           </div>
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="justify-start text-2xl font-semibold leading-snug">KulkasKu</div>
-            <div className="w-7 h-7 relative overflow-hidden">
+            <div className="w-7 h-7 relative overflow-hidden" onClick={() => setIsFilterOpen(true)}>
               <ArrowDownWideNarrow size={28} strokeWidth={1} />
             </div>
           </div>
-          <div className="w-full overflow-x-scroll scroll-smooth">
+          <div className="w-full overflow-x-scroll scroll-smooth" >
             <MenuBar />
           </div>
         </div>
       </div>
+
+      <Popup isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)}>
+        {isFilterOpen && <FilterPopUp />}
+      </Popup>
+
     </div>
   );
 }

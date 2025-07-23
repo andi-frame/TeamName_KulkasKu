@@ -12,14 +12,22 @@ export default function FreshGroup() {
   const [freshItems, setFreshItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const searchValue = useSearchStore((state) => state.searchValue);
+  const startDate = useSearchStore((state) => state.startDate);
+  const expDate = useSearchStore((state) => state.expDate);
+  const itemType = useSearchStore((state) => state.itemType);
 
   // API Call
   useEffect(() => {
-    if (searchValue) {
+    if (searchValue || startDate || expDate) {
       const getSearchFreshItem = async () => {
         try {
           const response = await api.get("/item/fresh/search", {
-            params: { name: searchValue }
+            params: { 
+              name: searchValue,
+              start: startDate,
+              exp: expDate,
+              itemType: itemType,
+             }
           });
           const data = response.data.data;
           setFreshItems(data);
@@ -32,7 +40,11 @@ export default function FreshGroup() {
     } else {
       const getAllFreshItems = async () => {
         try {
-          const response = await api.get("/item/fresh");
+          const response = await api.get("/item/fresh", {
+            params: {
+              itemType: itemType
+            }
+          });
           const data = response.data.data;
           setFreshItems(data);
         } catch (error) {
