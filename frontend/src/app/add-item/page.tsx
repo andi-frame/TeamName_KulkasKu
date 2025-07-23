@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from 'sonner'
+
 import React, { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -89,7 +91,7 @@ const Page = () => {
   const handleReceiptResult = (result: ReceiptResult) => {
     if (!result || !Array.isArray(result.items)) {
       console.error("Invalid receipt result structure:", result);
-      alert("Format data receipt tidak valid");
+      toast.error("Format data receipt tidak valid");
       return;
     }
 
@@ -134,7 +136,7 @@ const Page = () => {
       setShowContinueReceipt(true);
     } catch (err: unknown) {
       console.error("Error:", err);
-      alert("Gagal menambahkan item.");
+      toast.error("Gagal menambahkan item.");
     }
   };
 
@@ -156,7 +158,7 @@ const Page = () => {
     setProcessedItemIndexes([]);
     setCurrentItem(null);
     setCurrentItemIndex(null);
-    alert("Semua item dari struk telah diproses!");
+    toast.success("Semua item dari struk telah diproses!");
   };
 
   const handleCloseScannerPopup = () => {
@@ -166,7 +168,7 @@ const Page = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !type || !amount || !amountType || !startDate || !expDate) {
-      alert("Semua field wajib diisi kecuali deskripsi.");
+      toast.error("Semua field wajib diisi kecuali deskripsi.");
       return;
     }
 
@@ -182,7 +184,7 @@ const Page = () => {
       });
 
       console.log("Response:", response.data);
-      alert("Item berhasil ditambahkan!");
+      toast.success("Item berhasil ditambahkan!");
 
       // Clear form after success
       setName("");
@@ -196,7 +198,7 @@ const Page = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
-      alert("Gagal menambahkan item.");
+      toast.error("Gagal menambahkan item.");
     }
   };
 
