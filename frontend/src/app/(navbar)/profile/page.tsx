@@ -16,6 +16,7 @@ export default function ProfilePage() {
     setShowModal(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleRemoveChip = (indexToRemove: any) => {
     setChips(chips.filter((_, index) => index !== indexToRemove));
   };
