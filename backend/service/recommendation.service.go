@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -12,16 +13,18 @@ import (
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type RecommendationService struct {
-	repo *repository.RecommendationRepository
-	// itemRepo *repository.ItemRepository
+	repo              *repository.RecommendationRepository
+	recipeDetailCache map[string]*schema.RecipeDetail
 }
 
 func NewRecommendationService(repo *repository.RecommendationRepository) *RecommendationService {
 	return &RecommendationService{
-		repo: repo,
+		repo:              repo,
+		recipeDetailCache: make(map[string]*schema.RecipeDetail),
 	}
 }
 
@@ -68,6 +71,163 @@ func (s *RecommendationService) TrackRecipeInteraction(userID uuid.UUID, recipeI
 	return s.repo.CreateActivity(activity)
 }
 
+// Gets recipe detail by slug from Yummy API
+func (s *RecommendationService) getRecipeDetail(slug string) (*schema.RecipeDetail, error) {
+	// Check cache
+	if detail, exists := s.recipeDetailCache[slug]; exists {
+		return detail, nil
+	}
+
+	url := fmt.Sprintf("https://www.yummy.co.id/api/recipe/detail/%s", slug)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var apiResp schema.RecipeDetailResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	s.recipeDetailCache[slug] = &apiResp.Data
+
+	return &apiResp.Data, nil
+}
+
+func (s *RecommendationService) matchIngredientWithUserItem(ingredientDesc string, userItems []schema.Item) (*schema.Item, float64) {
+	ingredientDesc = strings.ToLower(strings.TrimSpace(ingredientDesc))
+
+	var bestMatch *schema.Item
+	var bestScore float64 = 0
+
+	for i, item := range userItems {
+		itemName := strings.ToLower(strings.TrimSpace(item.Name))
+
+		// Exact match
+		if itemName == ingredientDesc {
+			return &userItems[i], 1.0
+		}
+
+		// Contains match
+		if strings.Contains(ingredientDesc, itemName) || strings.Contains(itemName, ingredientDesc) {
+			score := s.calculateStringSimilarity(ingredientDesc, itemName)
+			if score > bestScore {
+				bestScore = score
+				bestMatch = &userItems[i]
+			}
+		}
+
+		// Fuzzy match
+		keywords := s.extractKeywords(ingredientDesc)
+		for _, keyword := range keywords {
+			if strings.Contains(itemName, keyword) || strings.Contains(keyword, itemName) {
+				score := s.calculateStringSimilarity(keyword, itemName) * 0.8 // Slight penalty
+				if score > bestScore {
+					bestScore = score
+					bestMatch = &userItems[i]
+				}
+			}
+		}
+	}
+
+	if bestMatch != nil && bestScore > 0.3 { // Threshold minimum
+		return bestMatch, bestScore
+	}
+
+	return nil, 0
+}
+
+func (s *RecommendationService) extractKeywords(description string) []string {
+	// Remove common words
+	commonWords := map[string]bool{
+		"dan": true, "atau": true, "yang": true, "di": true, "ke": true,
+		"dari": true, "untuk": true, "dengan": true, "secukupnya": true,
+		"potong": true, "iris": true, "cincang": true, "halus": true,
+		"sedang": true, "besar": true, "kecil": true, "gram": true, "ml": true,
+		"sendok": true, "makan": true, "gelas": true, "buah": true,
+	}
+
+	words := strings.Fields(description)
+	var keywords []string
+
+	for _, word := range words {
+		word = strings.ToLower(strings.TrimSpace(word))
+		// Remove punctutation marks
+		word = strings.Trim(word, ".,!?;:")
+
+		if len(word) > 2 && !commonWords[word] {
+			keywords = append(keywords, word)
+		}
+	}
+
+	return keywords
+}
+
+// Calculates score based on the amount of an item.
+func (s *RecommendationService) calculateAmountScore(userItem *schema.Item) float64 {
+	switch strings.ToLower(userItem.AmountType) {
+	case "gram", "kg", "g":
+		if userItem.Amount >= 500 {
+			return 1.0
+		} else if userItem.Amount >= 250 {
+			return 0.8
+		} else if userItem.Amount >= 100 {
+			return 0.6
+		} else {
+			return 0.3
+		}
+	case "ml", "liter":
+		if userItem.Amount >= 500 {
+			return 1.0
+		} else if userItem.Amount >= 250 {
+			return 0.8
+		} else if userItem.Amount >= 100 {
+			return 0.6
+		} else {
+			return 0.3
+		}
+	case "buah", "biji", "siung":
+		if userItem.Amount >= 3 {
+			return 1.0
+		} else if userItem.Amount >= 2 {
+			return 0.8
+		} else if userItem.Amount >= 1 {
+			return 0.6
+		} else {
+			return 0.2
+		}
+	default:
+		// Default scoring
+		if userItem.Amount >= 1 {
+			return 0.8
+		} else {
+			return 0.3
+		}
+	}
+}
+
+func (s *RecommendationService) calculateExpiryUrgencyScore(userItem *schema.Item) float64 {
+	now := time.Now()
+	daysUntilExpiry := userItem.ExpDate.Sub(now).Hours() / 24
+
+	if daysUntilExpiry <= 0 {
+		return 0 // expired
+	} else if daysUntilExpiry <= 1 {
+		return 1.0 // Very urgent
+	} else if daysUntilExpiry <= 3 {
+		return 0.8 // Urgent
+	} else if daysUntilExpiry <= 7 {
+		return 0.6 // Moderate
+	} else if daysUntilExpiry <= 14 {
+		return 0.4 // Low priority
+	} else {
+		return 0.2 // Very low priority
+	}
+}
+
 // Recommendations based on user preferences and available items
 func (s *RecommendationService) GetRecommendations(userID uuid.UUID, limit int) ([]schema.Recipe, error) {
 	// Get user items
@@ -79,7 +239,11 @@ func (s *RecommendationService) GetRecommendations(userID uuid.UUID, limit int) 
 	// Get user preferences
 	userPref, err := s.repo.GetUserPreference(userID)
 	if err != nil {
-		userPref = s.createDefaultPreference(userID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			userPref = s.createDefaultPreference(userID)
+		} else {
+			return nil, err // return real error
+		}
 	}
 
 	keywords := s.buildSearchKeywords(userItems)
@@ -139,7 +303,61 @@ func (s *RecommendationService) scoreRecipes(recipes []schema.Recipe, userItems 
 }
 
 func (s *RecommendationService) calculateIngredientScore(recipe schema.Recipe, userItems []schema.Item) float64 {
-	// TODO: improve this fuzzy
+	recipeDetail, err := s.getRecipeDetail(recipe.Slug)
+	if err != nil {
+		return s.calculateIngredientScoreFallback(recipe, userItems)
+	}
+
+	if len(recipeDetail.IngredientType) == 0 {
+		return 0.3 // Neutral score if no ingredient
+	}
+
+	totalIngredients := 0
+	totalScore := 0.0
+
+	// Loop through all ingredient types
+	for _, ingredientType := range recipeDetail.IngredientType {
+		for _, ingredient := range ingredientType.Ingredients {
+			totalIngredients++
+
+			matchedItem, matchScore := s.matchIngredientWithUserItem(ingredient.Description, userItems)
+
+			if matchedItem != nil {
+				// Calculate score
+				baseScore := matchScore
+				amountScore := s.calculateAmountScore(matchedItem)
+				expiryScore := s.calculateExpiryUrgencyScore(matchedItem)
+
+				// Weighted combination:
+				// - 50% match quality
+				// - 30% amount availability
+				// - 20% expiry urgency
+				combinedScore := (baseScore * 0.5) + (amountScore * 0.3) + (expiryScore * 0.2)
+				totalScore += combinedScore
+			}
+		}
+	}
+
+	if totalIngredients == 0 {
+		return 0.3
+	}
+
+	finalScore := totalScore / float64(totalIngredients)
+
+	// Bonus for high availability
+	availabilityRatio := totalScore / float64(totalIngredients)
+	if availabilityRatio > 0.7 {
+		finalScore += 0.1
+	}
+
+	if finalScore > 1.0 {
+		finalScore = 1.0
+	}
+
+	return finalScore
+}
+
+func (s *RecommendationService) calculateIngredientScoreFallback(recipe schema.Recipe, userItems []schema.Item) float64 {
 	itemNames := make(map[string]bool)
 	for _, item := range userItems {
 		itemNames[strings.ToLower(item.Name)] = true
@@ -160,7 +378,7 @@ func (s *RecommendationService) calculateIngredientScore(recipe schema.Recipe, u
 
 		// Fuzzy matching
 		for itemName := range itemNames {
-			if strings.Contains(itemName, tagName) || strings.Contains(tagName, itemName) {
+			if s.calculateStringSimilarity(itemName, tagName) > 0.7 {
 				matches++
 				break
 			}
@@ -322,7 +540,7 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 	cookingTimeCount := 0
 	timeOfDayCount := make(map[string]int)
 
-	for _, activity := range activities { 
+	for _, activity := range activities {
 		// Weight recent activities higher
 		weight := s.calculateActivityWeight(activity.CreatedAt)
 
