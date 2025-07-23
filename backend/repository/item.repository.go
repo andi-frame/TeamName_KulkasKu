@@ -25,9 +25,47 @@ func GetAllFreshItem(userID string) ([]schema.Item, error) {
 	return items, nil
 }
 
+func GetAllFreshItemByName(userID string, name string) ([]schema.Item, error) {
+	var items []schema.Item
+
+	query := database.DB.
+		Where("user_id = ?", userID).
+		Where("exp_date > ?", time.Now().UTC())
+
+	if name != "" {
+		query = query.Where("name ILIKE ?", "%"+name+"%")
+	}
+
+	result := query.Order("exp_date ASC").Find(&items)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return items, nil
+}
+
 func GetAllExpiredItem(userID string) ([]schema.Item, error) {
 	var items []schema.Item
 	result := database.DB.Where("user_id = ?", userID).Where("exp_date < ?", time.Now().UTC()).Find(&items).Order("exp_date DESC")
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return items, nil
+}
+
+func GetAllExpiredItemByName(userID string, name string) ([]schema.Item, error) {
+	var items []schema.Item
+
+	query := database.DB.
+		Where("user_id = ?", userID).
+		Where("exp_date < ?", time.Now().UTC())
+
+	if name != "" {
+		query = query.Where("name ILIKE ?", "%"+name+"%")
+	}
+
+	result := query.Order("exp_date DESC").Find(&items)
+
 	if result.Error != nil {
 		return nil, result.Error
 	}
