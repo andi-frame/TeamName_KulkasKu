@@ -1,24 +1,35 @@
 "use client";
 
+import { LoadingOverlay } from "@/components/loading-overlay";
 import RecipeCard from "@/components/recipe/recipe-card";
 import RecipeHeader from "@/components/recipe/recipe-header";
+import { useLoadingStore } from "@/store/useLoadingStore";
 import { useRecipeStore } from "@/store/useRecipeStore";
 import api from "@/utils/axios";
 import React, { useEffect } from "react";
 
 const Page = () => {
   const { recipes, setRecipes } = useRecipeStore();
+  const { isLoading, setLoading } = useLoadingStore();
 
   useEffect(() => {
     const getAllRecipes = async () => {
-      const res = await api.get("/recipe/recommendations");
-      setRecipes(res.data.data);
+      try {
+        setLoading(true);
+        const res = await api.get("/recipe/recommendations");
+        setRecipes(res.data.data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
     };
     getAllRecipes();
-  }, [setRecipes]);
+  }, [setRecipes, setLoading]);
 
   return (
     <>
+      {isLoading && <LoadingOverlay />}
       <div>
         <RecipeHeader />
         <div className="flex flex-wrap w-full">

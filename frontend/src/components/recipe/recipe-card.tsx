@@ -30,7 +30,7 @@ const RecipeCard: React.FC<Props> = ({ recipe }) => {
     router.push("/recipe/detail");
   };
 
-  if (data === null) return <div>Loading...</div>;
+  if (data === null) return <div></div>;
 
   return (
     <div className="rounded p-4 shadow max-w-sm" onClick={handleRecipeOnClick}>
