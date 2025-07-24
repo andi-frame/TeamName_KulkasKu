@@ -30,28 +30,28 @@ type UserPreference struct {
 
 // UserPreferenceTag for preferred tags
 type UserPreferenceTag struct {
-	ID               uint      `gorm:"primarykey"`
+	BaseModel
 	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
 	Tag              string    `gorm:"index;size:100"`
 }
 
 // UserPreferenceCategory for preferred categories
 type UserPreferenceCategory struct {
-	ID               uint      `gorm:"primarykey"`
+	BaseModel
 	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
 	Category         string    `gorm:"index;size:100"`
 }
 
 // UserPreferenceIngredient for preferred ingredients
 type UserPreferenceIngredient struct {
-	ID               uint      `gorm:"primarykey"`
+	BaseModel
 	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
 	Ingredient       string    `gorm:"index;size:100"`
 }
 
 // UserDislikedIngredient for disliked ingredients
 type UserDislikedIngredient struct {
-	ID               uint      `gorm:"primarykey"`
+	BaseModel
 	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
 	Ingredient       string    `gorm:"index;size:100"`
 }
@@ -83,7 +83,7 @@ type UserActivity struct {
 
 // UserActivityRecipeTag for activity tags
 type UserActivityRecipeTag struct {
-	ID             uint      `gorm:"primarykey"`
+	BaseModel
 	UserActivityID uuid.UUID `gorm:"type:uuid;index"`
 	Tag            string    `gorm:"index;size:100"`
 }

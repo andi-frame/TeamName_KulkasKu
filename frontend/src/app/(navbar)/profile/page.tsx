@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 import { UserCircle, X, Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -39,13 +40,9 @@ export default function ProfilePage() {
           {chips.map((chip, index) => (
             <span
               key={index}
-              className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-800 rounded-full font-medium"
-            >
+              className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-800 rounded-full font-medium">
               {chip}
-              <button
-                onClick={() => handleRemoveChip(index)}
-                className="hover:text-red-500"
-              >
+              <button onClick={() => handleRemoveChip(index)} className="hover:text-red-500">
                 <X size={12} strokeWidth={2} />
               </button>
             </span>
@@ -54,8 +51,7 @@ export default function ProfilePage() {
           {/* + Add New Keyword Chip */}
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-600 rounded-full hover:bg-[#cbd5e1] font-medium"
-          >
+            className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-600 rounded-full hover:bg-[#cbd5e1] font-medium">
             <Plus size={12} strokeWidth={2} />
             Tambah
           </button>
@@ -75,16 +71,10 @@ export default function ProfilePage() {
               onChange={(e) => setNewChip(e.target.value)}
             />
             <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-sm px-4 py-1 text-gray-500 rounded hover:underline"
-              >
+              <button onClick={() => setShowModal(false)} className="text-sm px-4 py-1 text-gray-500 rounded hover:underline">
                 Batal
               </button>
-              <button
-                onClick={handleAddChip}
-                className="text-sm px-4 py-1 bg-[#5DB1FF] text-white rounded-md font-semibold"
-              >
+              <button onClick={handleAddChip} className="text-sm px-4 py-1 bg-[#5DB1FF] text-white rounded-md font-semibold">
                 Tambah
               </button>
             </div>

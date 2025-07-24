@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
@@ -33,12 +34,26 @@ func (r *RecommendationRepository) GetUserPreference(userID uuid.UUID) (*schema.
 
 func (r *RecommendationRepository) UpsertUserPreference(pref *schema.UserPreference) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		// Save main preference
-		if err := tx.Save(pref).Error; err != nil {
-			return err
+		var existing schema.UserPreference
+		err := tx.Where("user_id = ?", pref.UserID).First(&existing).Error
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// New insert
+				if err := tx.Create(pref).Error; err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			// Use existing ID to maintain FK consistency
+			pref.ID = existing.ID
+			if err := tx.Model(&existing).Updates(pref).Error; err != nil {
+				return err
+			}
 		}
 
-		// Update associations
 		associations := []string{
 			"PreferredTags",
 			"PreferredCategories",
