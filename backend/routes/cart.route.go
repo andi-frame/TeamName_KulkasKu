@@ -19,8 +19,10 @@ func CartRoute(r *gin.Engine, cfg config.Config) {
 	cartRoutes.Use(middleware.JWTMiddleware())
 
 	cartRoutes.POST("/create", controller.CreateNewCartHandler)
+	cartRoutes.POST("/item/create", controller.CreateCartItemHandler)
 	cartRoutes.GET("/all", controller.GetAllCartHandler)
-	cartRoutes.GET("/all", controller.GetCartDetailHandler)
+	cartRoutes.GET("/:id", controller.GetCartDetailHandler)
+	cartRoutes.GET("/:id/items", controller.GetCartItemsHandler)
 	cartRoutes.PUT("/update", controller.UpdateCartHandler)
 	cartRoutes.DELETE("/delete/:id", controller.DeleteCartHandler)
 }
