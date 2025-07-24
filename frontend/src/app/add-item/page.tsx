@@ -3,7 +3,7 @@
 import { toast } from 'sonner'
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Scan } from "lucide-react";
 import Link from "next/link";
 import api from "@/utils/axios";
 import { FoodScanner } from "@/components/food-scanner";
@@ -212,6 +212,16 @@ const Page = () => {
       <form onSubmit={handleSubmit} className="flex flex-col justify-center pt-6">
         <div className="text-xl font-bold py-5">Tambahkan Item</div>
 
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={handleScanClick}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white border-2 border-[#5DB1FF] text-[#5DB1FF] hover:bg-[#5DB1FF] hover:text-white rounded-lg font-semibold text-sm transition-all duration-200 active:scale-[0.98] group">
+            <Scan size={18} className="group-hover:animate-pulse" />
+            <span>Scan untuk isi otomatis</span>
+          </button>
+        </div>
+
         <div className="flex flex-col gap-3">
           {/* Nama Item */}
           <div className="flex flex-col">
@@ -294,21 +304,13 @@ const Page = () => {
             <label htmlFor="expDate" className="text-xs font-semibold py-1">
               Tanggal Kedaluwarsa
             </label>
-            <div className="w-full flex gap-3">
-              <input
-                type="date"
-                id="expDate"
-                className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-2/3 focus:outline-[#5DB1FF]"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={handleScanClick}
-                className="text-xs text-center min-w-0 w-1/3 py-2 bg-[#5DB1FF] rounded-md text-white font-semibold flex-shrink">
-                Scan
-              </button>
-            </div>
+            <input
+              type="date"
+              id="expDate"
+              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+              value={expDate}
+              onChange={(e) => setExpDate(e.target.value)}
+            />
           </div>
 
           {/* Deskripsi */}
