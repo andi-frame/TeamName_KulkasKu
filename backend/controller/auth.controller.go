@@ -19,6 +19,7 @@ import (
 type AuthService struct {
 	oauthConfig *oauth2.Config
 	jwtSecret   string
+	config      config.Config
 }
 
 func NewAuthService(cfg config.Config) *AuthService {
@@ -31,6 +32,7 @@ func NewAuthService(cfg config.Config) *AuthService {
 			Endpoint:     google.Endpoint,
 		},
 		jwtSecret: cfg.JWTSecret,
+		config:    cfg,
 	}
 }
 
@@ -113,25 +115,41 @@ func (authService *AuthService) CallbackHandler(c *gin.Context) {
 	}
 
 	// Set JWT as HTTP-only cookie
-	// TODO: adjust for fe prod
-	c.SetSameSite(http.SameSiteLaxMode)
+	sameSiteMode := http.SameSiteLaxMode
+	if authService.config.IsProduction {
+		sameSiteMode = http.SameSiteNoneMode
+	}
+	c.SetSameSite(sameSiteMode)
 	c.SetCookie(
 		"token",
 		tokenStr,
-		3600*24,
+		3600*24, // 24 hours
 		"/",
-		"",
-		false,
+		authService.config.CookieDomain,
+		authService.config.CookieSecure,
 		true, // httpOnly
 	)
 
-	// TODO: adjust in prod
-	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/")
+	c.Redirect(http.StatusTemporaryRedirect, authService.config.FrontendURL)
 }
 
 // Logout Handler
 func (authService *AuthService) LogoutHandler(c *gin.Context) {
-	// Just confirmation, nothing changed in the db because this is stateless
+	c.SetSameSite(http.SameSiteLaxMode)
+	if authService.config.IsProduction {
+		c.SetSameSite(http.SameSiteNoneMode)
+	}
+
+	c.SetCookie(
+		"token",
+		"",
+		-1,
+		"/",
+		authService.config.CookieDomain,
+		authService.config.CookieSecure,
+		true,
+	)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 

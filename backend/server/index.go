@@ -22,7 +22,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.RedirectTrailingSlash = false
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     cfg.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Set-Cookie"},
