@@ -163,9 +163,10 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     }
 
     setIsCapturing(true);
-    setIsProcessing(true);
 
     try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -175,15 +176,18 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
         canvas.toBlob(
           async (blob) => {
-            if (blob) {
-              const randomId = Math.random().toString(36).substring(2, 15);
-              const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-              const file = new File([blob], `capture_${randomId}_${timestamp}.jpg`, {
-                type: "image/jpeg",
-                lastModified: new Date().getTime(),
-              });
+            try {
+              setIsCapturing(false);
+              setIsProcessing(true);
 
-              try {
+              if (blob) {
+                const randomId = Math.random().toString(36).substring(2, 15);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                const file = new File([blob], `capture_${randomId}_${timestamp}.jpg`, {
+                  type: "image/jpeg",
+                  lastModified: new Date().getTime(),
+                });
+
                 if (scannerType === "image") {
                   await predictItemFromImage(file);
                 } else if (scannerType === "receipt") {
@@ -191,12 +195,14 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                 } else if (scannerType === "barcode") {
                   await processBarcodeImage(file);
                 }
-              } catch (error) {
-                console.error("Processing error:", error);
-                alert("Gagal memproses gambar. Silakan coba lagi.");
+              } else {
+                alert("Gagal mengambil foto. Silakan coba lagi.");
               }
-            } else {
-              alert("Gagal mengambil foto. Silakan coba lagi.");
+            } catch (error) {
+              console.error("Processing error:", error);
+              alert("Gagal memproses gambar. Silakan coba lagi.");
+            } finally {
+              setIsProcessing(false);
             }
           },
           "image/jpeg",
@@ -206,7 +212,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     } catch (error) {
       console.error("Capture error:", error);
       alert("Gagal mengambil foto. Silakan coba lagi.");
-    } finally {
       setIsCapturing(false);
       setIsProcessing(false);
     }
@@ -502,10 +507,20 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                 )}
 
                 {/* Hint untuk menampilkan instruksi kembali */}
-                {(scannerType === "image" || scannerType === "receipt") && isCameraReady && !showInstructions && (
+                {(scannerType === "image" || scannerType === "receipt") && isCameraReady && !showInstructions && !isCapturing && (
                   <div className="absolute bottom-4 left-4 right-4 text-center">
                     <div className="bg-white/90 text-[#5DB1FF] px-3 py-1 rounded-full text-sm border border-[#5DB1FF]/30">
                       Tap untuk melihat instruksi
+                    </div>
+                  </div>
+                )}
+
+                {/* Capturing overlay */}
+                {isCapturing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="bg-white/95 text-[#5DB1FF] p-4 rounded-lg flex flex-col items-center border border-gray-200 shadow-lg">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5DB1FF] mb-2"></div>
+                      <p className="font-medium">Mengambil foto...</p>
                     </div>
                   </div>
                 )}
@@ -532,7 +547,14 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                     ) : (
                       <Camera size={24} />
                     )}
-                    <span className="font-medium">{isProcessing || isCapturing ? "Memproses..." : "Ambil Foto"}</span>
+                    <span className="font-medium">
+                      {isCapturing 
+                        ? "Mengambil foto..." 
+                        : isProcessing 
+                        ? "Memproses..." 
+                        : "Ambil Foto"
+                      }
+                    </span>
                   </button>
                 )}
 

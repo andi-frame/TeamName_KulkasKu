@@ -4,8 +4,8 @@ import { ScannerSelectionProps } from "@/types/scanner.types";
 
 export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
   return (
-    <div className="fixed inset-0 bg-white/50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full my-8 p-6 relative" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-white/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => onSelect("barcode")}
@@ -14,7 +14,7 @@ export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
               <div className="w-[80px] h-[80px] flex items-center justify-center">
                 <Barcode size={70} />
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">barcode scan</span>
+              <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">barcode scan</span>
             </div>
           </button>
 
@@ -25,7 +25,7 @@ export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
               <div className="w-[80px] h-[80px] flex items-center justify-center">
                 <Fullscreen size={65} />
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-green-600">image scan</span>
+              <span className="text-xs font-medium text-gray-700 group-hover:text-green-600">image scan</span>
             </div>
           </button>
 
@@ -36,7 +36,7 @@ export function ScannerSelection({ onSelect, onClose }: ScannerSelectionProps) {
               <div className="w-[80px] h-[80px] flex items-center justify-center">
                 <ReceiptText size={65} />
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-orange-600">receipt scan</span>
+              <span className="text-xs font-medium text-gray-700 group-hover:text-orange-600">receipt scan</span>
             </div>
           </button>
         </div>
