@@ -14,19 +14,46 @@ type UserPreference struct {
 	UserID    uuid.UUID `gorm:"type:uuid;index"`
 	User      User      `gorm:"foreignKey:UserID;references:ID"`
 
-	// Recipe preferences (learned from interactions)
-	PreferredTags       []string `gorm:"type:text[]"`        // Most clicked recipe tags
-	AvgCookingTime      int      `gorm:"default:30"`         // Preferred cooking duration
-	AvgCalories         float64  `gorm:"default:400"`        // Preferred calorie range
-	PreferredCategories []string `gorm:"type:text[]"`        // Preferred food categories
-	PriceRange          string   `gorm:"default:affordable"` // budget, affordable, premium
-	ServingPreference   int      `gorm:"default:2"`          // Preferred serving size
+	// Recipe preferences
+	AvgCookingTime    int     `gorm:"default:30"`
+	AvgCalories       float64 `gorm:"default:400"`
+	PriceRange        string  `gorm:"default:affordable"`
+	ServingPreference int     `gorm:"default:2"`
+	LastUpdated       time.Time
 
-	// Ingredient preferences (top ingredients user often uses)
-	PreferredIngredients []string `gorm:"type:text[]"`
-	DislikedIngredients  []string `gorm:"type:text[]"`
+	// Relationships for array fields
+	PreferredTags        []UserPreferenceTag
+	PreferredCategories  []UserPreferenceCategory
+	PreferredIngredients []UserPreferenceIngredient
+	DislikedIngredients  []UserDislikedIngredient
+}
 
-	LastUpdated time.Time
+// UserPreferenceTag for preferred tags
+type UserPreferenceTag struct {
+	ID               uint      `gorm:"primarykey"`
+	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
+	Tag              string    `gorm:"index;size:100"`
+}
+
+// UserPreferenceCategory for preferred categories
+type UserPreferenceCategory struct {
+	ID               uint      `gorm:"primarykey"`
+	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
+	Category         string    `gorm:"index;size:100"`
+}
+
+// UserPreferenceIngredient for preferred ingredients
+type UserPreferenceIngredient struct {
+	ID               uint      `gorm:"primarykey"`
+	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
+	Ingredient       string    `gorm:"index;size:100"`
+}
+
+// UserDislikedIngredient for disliked ingredients
+type UserDislikedIngredient struct {
+	ID               uint      `gorm:"primarykey"`
+	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
+	Ingredient       string    `gorm:"index;size:100"`
 }
 
 // UserActivity tracks all user interactions with recipes
@@ -36,21 +63,27 @@ type UserActivity struct {
 	UserID    uuid.UUID `gorm:"type:uuid;index"`
 	User      User      `gorm:"foreignKey:UserID;references:ID"`
 
-	RecipeID     string `gorm:"index"` // Recipe ID from API
+	RecipeID     string `gorm:"index"`
 	RecipeTitle  string
 	RecipeSlug   string
-	ActivityType string `gorm:"index"` // "detail_view", "cooked"
+	ActivityType string `gorm:"index"`
+	ViewDuration int    `gorm:"default:0"`
 
-	// Interaction metrics
-	ViewDuration int `gorm:"default:0"` // Seconds spent viewing
-
-	// Recipe data snapshot (for learning)
-	RecipeTags     []string `gorm:"type:text[]"`
+	// Recipe snapshot fields
 	RecipeCategory string
 	CookingTime    int
 	Calories       string
 	Price          int
 	ServingSize    int
+	SessionID      string `gorm:"index"`
 
-	SessionID string `gorm:"index"` // For grouping activities
+	// Relationship for tags
+	RecipeTags []UserActivityRecipeTag
+}
+
+// UserActivityRecipeTag for activity tags
+type UserActivityRecipeTag struct {
+	ID             uint      `gorm:"primarykey"`
+	UserActivityID uuid.UUID `gorm:"type:uuid;index"`
+	Tag            string    `gorm:"index;size:100"`
 }
