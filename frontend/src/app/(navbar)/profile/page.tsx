@@ -1,9 +1,23 @@
 "use client";
 
+import { User } from "@/types/user.types";
+import api from "@/utils/axios";
 import { UserCircle, X, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
+  const [, setUser] = useState<User>();
+
+  useEffect(() => {
+    const getUserProfile = async () => {
+        const res = await api.get("/auth/me");
+        setUser(res.data.profile);
+
+    }
+
+    getUserProfile()
+  }, []);
+
   const [chips, setChips] = useState(["Foodie", "Vegan", "Chef", "Low-carb"]);
   const [showModal, setShowModal] = useState(false);
   const [newChip, setNewChip] = useState("");
@@ -29,7 +43,7 @@ export default function ProfilePage() {
         <div className="bg-[#CBD5E1] rounded-full p-3">
           <UserCircle size={64} strokeWidth={1.5} />
         </div>
-        <div className="text-lg font-semibold">John Doe</div>
+        <div className="text-lg font-semibold">{"John Doe"}</div>
         <div className="text-sm text-gray-500">johndoe@example.com</div>
       </div>
 
