@@ -423,7 +423,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       {mode === "selection" ? (
         <ScannerSelection onSelect={handleSelect} onClose={onClose || (() => {})} />
       ) : (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
+        <div className="fixed inset-0 bg-black z-50 flex flex-col overflow-hidden">
           <div className="flex justify-between items-center p-4 bg-black text-white">
             <h2 className="text-lg font-semibold">
               {scannerType === "barcode" ? "Scan Barcode" : scannerType === "image" ? "Foto Produk" : "Foto Struk"}
@@ -437,7 +437,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
           </div>
 
           {/* Main content */}
-          <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
             {/* Camera/Video section */}
             <div className="flex-1 relative flex items-center justify-center bg-black lg:h-full">
               <div className="relative w-full h-full max-w-2xl max-h-96 lg:max-h-full">

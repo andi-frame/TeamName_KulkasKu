@@ -22,8 +22,8 @@ export function ReceiptItemSelectionModal(props: Props) {
   
   if (safeItems.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full my-8 p-6">
           <div className="text-center">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Tidak Ada Item</h3>
             <p className="text-sm text-gray-500 mb-6">
@@ -42,8 +42,8 @@ export function ReceiptItemSelectionModal(props: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full my-8 max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
