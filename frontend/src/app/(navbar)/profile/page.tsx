@@ -78,7 +78,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user || !preferences) {
+  if (!user) {
     return <div className="w-full pt-20 p-4">Loading profile...</div>;
   }
 
@@ -106,34 +106,38 @@ export default function ProfilePage() {
       )}
 
       {/* Avg Cooking Time */}
-      <div className="pt-6">
-        <div className="text-sm mb-2">Average Cooking Time: {preferences.AvgCookingTime}</div>
-        <div className="text-sm mb-2">Average Calories: {preferences.AvgCalories}</div>
-      </div>
+      {preferences && (
+        <div className="pt-6">
+          <div className="text-sm mb-2">Average Cooking Time: {preferences.AvgCookingTime}</div>
+          <div className="text-sm mb-2">Average Calories: {preferences.AvgCalories}</div>
+        </div>
+      )}
 
       {/* Chips Section */}
-      <div className="pt-6">
-        <div className="text-sm font-semibold mb-2">Tags</div>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {preferences.PreferredTags.map((tag, index) => (
-            <span
-              key={index}
-              className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-800 rounded-full font-medium">
-              {tag.Tag}
-              <button onClick={() => handleRemoveChip(index)} className="hover:text-red-500">
-                <X size={12} strokeWidth={2} />
-              </button>
-            </span>
-          ))}
+      {preferences && (
+        <div className="pt-6">
+          <div className="text-sm font-semibold mb-2">Tags</div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {preferences.PreferredTags.map((tag, index) => (
+              <span
+                key={index}
+                className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-800 rounded-full font-medium">
+                {tag.Tag}
+                <button onClick={() => handleRemoveChip(index)} className="hover:text-red-500">
+                  <X size={12} strokeWidth={2} />
+                </button>
+              </span>
+            ))}
 
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-600 rounded-full hover:bg-[#cbd5e1] font-medium">
-            <Plus size={12} strokeWidth={2} />
-            Tambah
-          </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-600 rounded-full hover:bg-[#cbd5e1] font-medium">
+              <Plus size={12} strokeWidth={2} />
+              Tambah
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal Overlay */}
       {showModal && (
