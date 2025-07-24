@@ -27,6 +27,13 @@ func Init() {
 		&schema.Item{},
 		&schema.UserActivity{},
 		&schema.UserPreference{},
+		&schema.UserPreferenceTag{},
+		&schema.UserPreferenceCategory{},
+		&schema.UserPreferenceIngredient{},
+		&schema.UserDislikedIngredient{},
+		&schema.UserActivityRecipeTag{},
+		&schema.Cart{},
+		&schema.CartItem{},
 	); err != nil {
 		log.Println("AutoMigrate warning:", err)
 	}

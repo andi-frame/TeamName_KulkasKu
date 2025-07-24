@@ -61,7 +61,9 @@ func (s *RecommendationService) TrackRecipeInteraction(userID uuid.UUID, recipeI
 		for _, tag := range tags {
 			if tagMap, ok := tag.(map[string]any); ok {
 				if name, ok := tagMap["name"].(string); ok {
-					activity.RecipeTags = append(activity.RecipeTags, name)
+					activity.RecipeTags = append(activity.RecipeTags, schema.UserActivityRecipeTag{
+						Tag: name,
+					})
 				}
 			}
 		}
@@ -404,7 +406,7 @@ func (s *RecommendationService) calculatePreferenceScore(recipe schema.Recipe, u
 		tagMatches := 0
 		for _, recipeTag := range recipe.Tags {
 			for _, prefTag := range userPref.PreferredTags {
-				if strings.EqualFold(recipeTag.Name, prefTag) {
+				if strings.EqualFold(recipeTag.Name, prefTag.Tag) {
 					tagMatches++
 					break
 				}
@@ -478,13 +480,17 @@ func (s *RecommendationService) searchRecipes(keywords string, limit int) ([]sch
 // Utility functions
 func (s *RecommendationService) createDefaultPreference(userID uuid.UUID) *schema.UserPreference {
 	return &schema.UserPreference{
-		BaseModel:         schema.BaseModel{ID: uuid.New()},
-		UserID:            userID,
-		AvgCookingTime:    30,
-		AvgCalories:       400,
-		PriceRange:        "10k-30k",
-		ServingPreference: 1,
-		LastUpdated:       time.Now(),
+		BaseModel:            schema.BaseModel{ID: uuid.New()},
+		UserID:               userID,
+		AvgCookingTime:       30,
+		AvgCalories:          400,
+		PriceRange:           "10k-30k",
+		ServingPreference:    1,
+		LastUpdated:          time.Now(),
+		PreferredTags:        []schema.UserPreferenceTag{},
+		PreferredCategories:  []schema.UserPreferenceCategory{},
+		PreferredIngredients: []schema.UserPreferenceIngredient{},
+		DislikedIngredients:  []schema.UserDislikedIngredient{},
 	}
 }
 
@@ -538,7 +544,7 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 
 		// Collect tags
 		for _, tag := range activity.RecipeTags {
-			tagFreq[tag] += int(weight * 10)
+			tagFreq[tag.Tag] += int(weight * 10)
 		}
 
 		// Collect cooking times
@@ -563,12 +569,14 @@ func (s *RecommendationService) updateSingleUserPreference(userID uuid.UUID, act
 		return tagScores[i].Score > tagScores[j].Score
 	})
 
-	pref.PreferredTags = make([]string, 0, 10)
+	pref.PreferredTags = make([]schema.UserPreferenceTag, 0, 10)
 	for i, ts := range tagScores {
 		if i >= 10 {
 			break
 		}
-		pref.PreferredTags = append(pref.PreferredTags, ts.Tag)
+		pref.PreferredTags = append(pref.PreferredTags, schema.UserPreferenceTag{
+			Tag: ts.Tag,
+		})
 	}
 
 	// Update average cooking time

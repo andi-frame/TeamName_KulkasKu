@@ -1,6 +1,7 @@
 "use client";
 
 import { useRecipeStore } from "@/store/useRecipeStore";
+import { useRecipeTrackingStore } from "@/store/useRecipeTrackingStore";
 import { Recipe, RecipeDetail } from "@/types/recipe.types";
 import api from "@/utils/axios";
 import Image from "next/image";
@@ -15,6 +16,7 @@ const RecipeCard: React.FC<Props> = ({ recipe }) => {
   const router = useRouter();
   const { setRecipeDetail } = useRecipeStore();
   const [data, setData] = useState<RecipeDetail | null>(null);
+  const { trackRecipeClick } = useRecipeTrackingStore();
 
   useEffect(() => {
     const getRecipeDetail = async () => {
@@ -26,11 +28,12 @@ const RecipeCard: React.FC<Props> = ({ recipe }) => {
 
   const handleRecipeOnClick = () => {
     if (data === null) return;
+    trackRecipeClick(recipe);
     setRecipeDetail(data);
     router.push("/recipe/detail");
   };
 
-  if (data === null) return <div>Loading...</div>;
+  if (data === null) return <div></div>;
 
   return (
     <div className="rounded p-4 shadow max-w-sm" onClick={handleRecipeOnClick}>

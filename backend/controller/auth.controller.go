@@ -8,10 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
 )
@@ -63,6 +65,48 @@ func (authService *AuthService) MeHandler(c *gin.Context) {
 		"id":    claims["id"],
 		"email": claims["email"],
 		"name":  claims["name"],
+	})
+}
+
+// Profile
+func GetUserProfile(c *gin.Context) {
+	// Get user ID from context
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Fetch user
+	var user schema.User
+	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Fetch user preference
+	var preference schema.UserPreference
+	if err := database.DB.Preload("PreferredTags").
+		Preload("PreferredCategories").
+		Preload("PreferredIngredients").
+		Preload("DislikedIngredients").
+		Where("user_id = ?", userID).First(&preference).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"profile":     user,
+			"preferences": nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"profile":     user,
+		"preferences": preference,
 	})
 }
 

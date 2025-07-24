@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
@@ -19,7 +20,12 @@ func NewRecommendationRepository(db *gorm.DB) *RecommendationRepository {
 // User Preference methods
 func (r *RecommendationRepository) GetUserPreference(userID uuid.UUID) (*schema.UserPreference, error) {
 	var pref schema.UserPreference
-	err := r.db.Where("user_id = ?", userID).First(&pref).Error
+	err := r.db.Where("user_id = ?", userID).
+		Preload("PreferredTags").
+		Preload("PreferredCategories").
+		Preload("PreferredIngredients").
+		Preload("DislikedIngredients").
+		First(&pref).Error
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +33,54 @@ func (r *RecommendationRepository) GetUserPreference(userID uuid.UUID) (*schema.
 }
 
 func (r *RecommendationRepository) UpsertUserPreference(pref *schema.UserPreference) error {
-	return r.db.Save(pref).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var existing schema.UserPreference
+		err := tx.Where("user_id = ?", pref.UserID).First(&existing).Error
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// New insert
+				if err := tx.Create(pref).Error; err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			// Use existing ID to maintain FK consistency
+			pref.ID = existing.ID
+			if err := tx.Model(&existing).Updates(pref).Error; err != nil {
+				return err
+			}
+		}
+
+		associations := []string{
+			"PreferredTags",
+			"PreferredCategories",
+			"PreferredIngredients",
+			"DislikedIngredients",
+		}
+
+		for _, assoc := range associations {
+			var field any
+			switch assoc {
+			case "PreferredTags":
+				field = pref.PreferredTags
+			case "PreferredCategories":
+				field = pref.PreferredCategories
+			case "PreferredIngredients":
+				field = pref.PreferredIngredients
+			case "DislikedIngredients":
+				field = pref.DislikedIngredients
+			}
+
+			if err := tx.Model(pref).Association(assoc).Replace(field); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 // User Activity methods
@@ -38,6 +91,7 @@ func (r *RecommendationRepository) CreateActivity(activity *schema.UserActivity)
 func (r *RecommendationRepository) GetUserActivities(userID uuid.UUID, limit int) ([]schema.UserActivity, error) {
 	var activities []schema.UserActivity
 	err := r.db.Where("user_id = ? AND created_at >= ?", userID, time.Now().AddDate(0, -3, 0)).
+		Preload("RecipeTags").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&activities).Error
@@ -47,6 +101,7 @@ func (r *RecommendationRepository) GetUserActivities(userID uuid.UUID, limit int
 func (r *RecommendationRepository) GetAllUserActivitiesForLearning() ([]schema.UserActivity, error) {
 	var activities []schema.UserActivity
 	err := r.db.Where("created_at >= ?", time.Now().AddDate(0, -3, 0)).
+		Preload("RecipeTags").
 		Order("created_at DESC").
 		Find(&activities).Error
 	return activities, err
