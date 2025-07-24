@@ -168,10 +168,12 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         canvas.toBlob(
           async (blob) => {
             if (blob) {
-              const timestamp = Date.now();
-              const file = new File([blob], `capture_${timestamp}.jpg`, {
+              // Generate unique filename tanpa Date.now() untuk avoid hydration issues
+              const randomId = Math.random().toString(36).substring(2, 15);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const file = new File([blob], `capture_${randomId}_${timestamp}.jpg`, {
                 type: "image/jpeg",
-                lastModified: timestamp,
+                lastModified: new Date().getTime(),
               });
 
               try {
