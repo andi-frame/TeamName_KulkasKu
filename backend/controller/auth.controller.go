@@ -34,7 +34,7 @@ func NewAuthService(cfg config.Config) *AuthService {
 	}
 }
 
-// Me Handler
+// Me Handler - call current user data
 func (authService *AuthService) MeHandler(c *gin.Context) {
 	tokenStr, err := c.Cookie("token")
 	if err != nil {
