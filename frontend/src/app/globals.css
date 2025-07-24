@@ -50,3 +50,79 @@ body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* Toast animations */
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-to-bottom {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-to-top {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-from-top 0.3s ease-out;
+}
+
+.animate-slide-out {
+  animation: slide-out-to-top 0.3s ease-in;
+}
+
+.animate-slide-in-bottom {
+  animation: slide-in-from-bottom 0.3s ease-out;
+}
+
+.animate-slide-out-bottom {
+  animation: slide-out-to-bottom 0.3s ease-in;
+}
+
+/* Mobile toast stacking */
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: 80px; /* Above bottom navigation */
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+/* Custom border utilities */
+.border-l-3 {
+  border-left-width: 3px;
+}
