@@ -63,6 +63,50 @@ func GetAllExpiredItemHandler(c *gin.Context) {
 	})
 }
 
+func GetSearchedExpiredItemHandler(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userData := user.(middleware.JWTUserData)
+	searchName := c.Query("name")
+	startDateStr := c.Query("startDate")
+	expDateStr := c.Query("expDate")
+	itemType := c.Query("itemType")
+
+	var startDate, expDate *time.Time
+
+	if startDateStr != "" {
+		if t, err := time.Parse("2006-01-02", startDateStr); err == nil {
+			startDate = &t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid startDate format"})
+			return
+		}
+	}
+
+	if expDateStr != "" {
+		if t, err := time.Parse("2006-01-02", expDateStr); err == nil {
+			expDate = &t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid expDate format"})
+			return
+		}
+	}
+
+	data, err := repository.GetFilteredExpiredItem(userData.ID, searchName, startDate, expDate, itemType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
+}
+
 func GetAllFreshItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -73,6 +117,50 @@ func GetAllFreshItemHandler(c *gin.Context) {
 	userData := user.(middleware.JWTUserData)
 
 	data, err := repository.GetAllFreshItem(userData.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
+}
+
+func GetSearchedFreshItemHandler(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userData := user.(middleware.JWTUserData)
+	searchName := c.Query("name")
+	startDateStr := c.Query("startDate")
+	expDateStr := c.Query("expDate")
+	itemType := c.Query("itemType")
+
+	var startDate, expDate *time.Time
+
+	if startDateStr != "" {
+		if t, err := time.Parse("2006-01-02", startDateStr); err == nil {
+			startDate = &t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid startDate format"})
+			return
+		}
+	}
+
+	if expDateStr != "" {
+		if t, err := time.Parse("2006-01-02", expDateStr); err == nil {
+			expDate = &t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid expDate format"})
+			return
+		}
+	}
+
+	data, err := repository.GetFilteredFreshItem(userData.ID, searchName, startDate, expDate, itemType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
