@@ -113,16 +113,16 @@ func (authService *AuthService) CallbackHandler(c *gin.Context) {
 	}
 
 	// Set JWT as HTTP-only cookie
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "token",
-		Value:    tokenStr,
-		Path:     "/",
-		Domain:   "kirisame.jp.net",
-		Expires:  time.Now().Add(24 * time.Hour),
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-	})
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie(
+        "token",
+        tokenStr,
+        3600*24,
+        "/",
+        "kirisame.jp.net",
+        true,
+        true, // httpOnly
+    )
 
 	// TODO: adjust in prod
 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/")
