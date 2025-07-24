@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/controller"
@@ -24,7 +25,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Set-Cookie"},
 		AllowCredentials: true, // Enable cookies/auth
+		MaxAge:           24 * time.Hour,
 	}))
 
 	// Default routes
