@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FoodCard } from "@/components/food-card";
 import api from "@/utils/axios";
 import { Item } from "@/types/item.types";
@@ -15,6 +15,39 @@ export default function FreshGroup() {
   const startDate = useSearchStore((state) => state.startDate);
   const expDate = useSearchStore((state) => state.expDate);
   const itemType = useSearchStore((state) => state.itemType);
+  const sortBy = useSearchStore((state) => state.sortBy);
+  const sortOrder = useSearchStore((state) => state.sortOrder);
+
+  // Sort function
+  const sortItems = useCallback((items: Item[]) => {
+    if (!sortBy) return items;
+
+    return [...items].sort((a, b) => {
+      let aValue: string | number | Date;
+      let bValue: string | number | Date;
+      
+      switch (sortBy) {
+        case "name":
+          aValue = a.Name.toLowerCase();
+          bValue = b.Name.toLowerCase();
+          break;
+        case "amount":
+          aValue = a.Amount;
+          bValue = b.Amount;
+          break;
+        case "exp_date":
+          aValue = new Date(a.ExpDate);
+          bValue = new Date(b.ExpDate);
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [sortBy, sortOrder]);
 
   // API Call
   useEffect(() => {
@@ -30,7 +63,7 @@ export default function FreshGroup() {
              }
           });
           const data = response.data.data;
-          setFreshItems(data);
+          setFreshItems(sortItems(data));
           console.log(data);
         } catch (error) {
           console.error("Error fetching fresh items:", error);
@@ -46,14 +79,14 @@ export default function FreshGroup() {
             }
           });
           const data = response.data.data;
-          setFreshItems(data);
+          setFreshItems(sortItems(data));
         } catch (error) {
           console.error("Error fetching fresh items:", error);
         }
       };
       getAllFreshItems();
     }
-  }, [searchValue]);
+  }, [searchValue, startDate, expDate, itemType, sortBy, sortOrder, sortItems]);
 
   return (
     <>

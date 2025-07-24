@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "KulkasKu",
   description: "Web Management dan Perencanaan Isi Kulkas",
   icons: {
-    icon: "/kulkasku-logo-1.png",
+    icon: "/kulkasku-logo-1.ico",
   },
 };
 
