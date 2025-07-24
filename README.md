@@ -36,11 +36,7 @@ KulkasKu adalah aplikasi web modern yang mengintegrasikan teknologi untuk memban
 
 ### Backend AI (Python)
 - **Framework**: FastAPI
-- **AI Services**: 
-  - Google Cloud Vision API
-  - Google Gemini AI
-  - Custom OCR processing
-- **Image Processing**: PIL, OpenCV
+- **AI Services**: Google Gemini AI
 - **HTTP Client**: httpx untuk microservice communication
 
 ### DevOps & Deployment
