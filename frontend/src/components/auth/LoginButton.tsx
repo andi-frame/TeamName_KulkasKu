@@ -4,8 +4,7 @@ import Image from "next/image";
 
 const LoginButton = () => {
   const handleLogin = () => {
-    // TODO: change in prod
-    window.location.href = "http://localhost:5000/auth/login";
+    window.location.href = "https://os80w4wwsggwosc4o88k0csc.kirisame.jp.net/auth/login";
   };
 
   return (

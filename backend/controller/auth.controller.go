@@ -118,9 +118,9 @@ func (authService *AuthService) CallbackHandler(c *gin.Context) {
 		tokenStr,
 		3600*24,
 		"/",
-		"localhost", // TODO: adjust in prod
-		false,       // TODO: adjust in prod,secure: true if using HTTPS
-		true,        // httpOnly
+		"",
+		true,
+		true, // httpOnly
 	)
 
 	// TODO: adjust in prod
