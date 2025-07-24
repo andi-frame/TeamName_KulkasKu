@@ -4,7 +4,8 @@ import Image from "next/image";
 
 const LoginButton = () => {
   const handleLogin = () => {
-    window.location.href = "https://os80w4wwsggwosc4o88k0csc.kirisame.jp.net/auth/login";
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    window.location.href = `${baseUrl}/auth/login`;
   };
 
   return (
