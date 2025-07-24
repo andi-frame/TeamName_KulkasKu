@@ -12,8 +12,9 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
   const [scannerType, setScannerType] = useState<ScannerType | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,6 +28,18 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       cleanup();
     };
   }, []);
+
+  useEffect(() => {
+    if (isCameraReady && (scannerType === "image" || scannerType === "receipt")) {
+      setShowInstructions(true);
+
+      const timer = setTimeout(() => {
+        setShowInstructions(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isCameraReady, scannerType]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -67,12 +80,11 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
     setIsScanning(false);
     setIsCameraReady(false);
+    setShowInstructions(false);
   };
 
   const startCamera = async (): Promise<boolean> => {
     try {
-      setIsLoading(true);
-
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "environment",
@@ -89,7 +101,6 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         return new Promise((resolve) => {
           const onLoadedMetadata = () => {
             setIsCameraReady(true);
-            setIsLoading(false);
             videoRef.current?.removeEventListener("loadedmetadata", onLoadedMetadata);
             resolve(true);
           };
@@ -98,18 +109,15 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
           setTimeout(() => {
             setIsCameraReady(true);
-            setIsLoading(false);
             resolve(true);
           }, 2000);
         });
       }
 
-      setIsLoading(false);
       return true;
     } catch (error) {
       console.error("Camera access error:", error);
       alert("Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.");
-      setIsLoading(false);
       setMode("selection");
       return false;
     }
@@ -155,9 +163,10 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     }
 
     setIsCapturing(true);
-    setIsLoading(true);
 
     try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -167,14 +176,18 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
         canvas.toBlob(
           async (blob) => {
-            if (blob) {
-              const timestamp = Date.now();
-              const file = new File([blob], `capture_${timestamp}.jpg`, {
-                type: "image/jpeg",
-                lastModified: timestamp,
-              });
+            try {
+              setIsCapturing(false);
+              setIsProcessing(true);
 
-              try {
+              if (blob) {
+                const randomId = Math.random().toString(36).substring(2, 15);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                const file = new File([blob], `capture_${randomId}_${timestamp}.jpg`, {
+                  type: "image/jpeg",
+                  lastModified: new Date().getTime(),
+                });
+
                 if (scannerType === "image") {
                   await predictItemFromImage(file);
                 } else if (scannerType === "receipt") {
@@ -182,12 +195,14 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                 } else if (scannerType === "barcode") {
                   await processBarcodeImage(file);
                 }
-              } catch (error) {
-                console.error("Processing error:", error);
-                alert("Gagal memproses gambar. Silakan coba lagi.");
+              } else {
+                alert("Gagal mengambil foto. Silakan coba lagi.");
               }
-            } else {
-              alert("Gagal mengambil foto. Silakan coba lagi.");
+            } catch (error) {
+              console.error("Processing error:", error);
+              alert("Gagal memproses gambar. Silakan coba lagi.");
+            } finally {
+              setIsProcessing(false);
             }
           },
           "image/jpeg",
@@ -197,9 +212,18 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     } catch (error) {
       console.error("Capture error:", error);
       alert("Gagal mengambil foto. Silakan coba lagi.");
-    } finally {
       setIsCapturing(false);
-      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCameraViewClick = () => {
+    if (isCameraReady && (scannerType === "image" || scannerType === "receipt") && !showInstructions) {
+      setShowInstructions(true);
+
+      setTimeout(() => {
+        setShowInstructions(false);
+      }, 3000);
     }
   };
 
@@ -233,7 +257,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         scanningIntervalRef.current = null;
       }
 
-      setIsLoading(true);
+      setIsProcessing(true);
 
       const response = await api.post(
         `/product-info/${barcode}`,
@@ -276,7 +300,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         startBarcodeScanning();
       }, 1000);
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -328,7 +352,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
       if (result && result.success && result.data) {
         console.log("Receipt analysis result:", result.data);
-        onReceiptResult?.(result.data); 
+        onReceiptResult?.(result.data);
         handleCloseCamera();
       } else {
         alert("Failed to analyze receipt");
@@ -396,7 +420,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       return;
     }
 
-    setIsLoading(true);
+    setIsProcessing(true);
 
     try {
       if (scannerType === "image") {
@@ -410,7 +434,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       console.error("File processing error:", error);
       alert("Gagal memproses file. Silakan coba lagi.");
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -423,30 +447,32 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       {mode === "selection" ? (
         <ScannerSelection onSelect={handleSelect} onClose={onClose || (() => {})} />
       ) : (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="flex justify-between items-center p-4 bg-black text-white">
+        <div className="fixed inset-0 bg-white z-50 flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center p-4 bg-white text-[#5DB1FF] border-b border-gray-200">
             <h2 className="text-lg font-semibold">
               {scannerType === "barcode" ? "Scan Barcode" : scannerType === "image" ? "Foto Produk" : "Foto Struk"}
             </h2>
             <button
               onClick={handleCloseCamera}
-              className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
-              disabled={isLoading}>
-              <X size={24} />
+              className="p-2 rounded-full bg-[#5DB1FF]/10 hover:bg-[#5DB1FF]/20 transition-colors"
+              disabled={isProcessing}>
+              <X size={24} className="text-[#5DB1FF]" />
             </button>
           </div>
 
           {/* Main content */}
-          <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
             {/* Camera/Video section */}
             <div className="flex-1 relative flex items-center justify-center bg-black lg:h-full">
-              <div className="relative w-full h-full max-w-2xl max-h-96 lg:max-h-full">
+              <div
+                className="relative w-full h-full max-w-2xl max-h-96 lg:max-h-full cursor-pointer"
+                onClick={handleCameraViewClick}>
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
 
                 {!isCameraReady && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/75 text-white p-4 rounded-lg flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                    <div className="bg-white/95 text-[#5DB1FF] p-4 rounded-lg flex flex-col items-center border border-gray-200 shadow-lg">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5DB1FF] mb-2"></div>
                       <p>Memuat kamera...</p>
                     </div>
                   </div>
@@ -467,12 +493,34 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                   </div>
                 )}
 
-                {(scannerType === "image" || scannerType === "receipt") && isCameraReady && (
-                  <div className="absolute top-4 left-4 right-4 text-center">
-                    <div className="bg-black/75 text-white p-3 rounded-lg">
+                {(scannerType === "image" || scannerType === "receipt") && showInstructions && (
+                  <div
+                    className={`absolute top-4 left-4 right-4 text-center transition-all duration-500 ${
+                      showInstructions ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+                    }`}>
+                    <div className="bg-white/95 text-[#5DB1FF] p-3 rounded-lg shadow-lg backdrop-blur-sm border border-gray-200">
                       {scannerType === "image"
                         ? "Posisikan produk dalam frame dan tekan tombol foto"
                         : "Posisikan struk dalam frame dan tekan tombol foto"}
+                    </div>
+                  </div>
+                )}
+
+                {/* Hint untuk menampilkan instruksi kembali */}
+                {(scannerType === "image" || scannerType === "receipt") && isCameraReady && !showInstructions && !isCapturing && (
+                  <div className="absolute bottom-4 left-4 right-4 text-center">
+                    <div className="bg-white/90 text-[#5DB1FF] px-3 py-1 rounded-full text-sm border border-[#5DB1FF]/30">
+                      Tap untuk melihat instruksi
+                    </div>
+                  </div>
+                )}
+
+                {/* Capturing overlay */}
+                {isCapturing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="bg-white/95 text-[#5DB1FF] p-4 rounded-lg flex flex-col items-center border border-gray-200 shadow-lg">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5DB1FF] mb-2"></div>
+                      <p className="font-medium">Mengambil foto...</p>
                     </div>
                   </div>
                 )}
@@ -480,62 +528,75 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
             </div>
 
             {/* Controls section */}
-            <div className="lg:w-80 bg-gray-900 flex flex-col justify-center p-6">
+            <div className="lg:w-80 bg-gray-50 flex flex-col justify-center p-6 border-l border-gray-200">
               <div className="space-y-4">
-                <h3 className="text-white text-lg font-semibold text-center mb-6">Pilih Sumber</h3>
+                <h3 className="text-[#5DB1FF] text-lg font-semibold text-center mb-6">Pilih Sumber</h3>
 
                 {/* Camera capture button */}
                 {isCameraReady && (
                   <button
                     onClick={captureImage}
-                    disabled={isLoading || isCapturing}
+                    disabled={isProcessing || isCapturing}
                     className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
-                      isLoading || isCapturing ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                      isProcessing || isCapturing
+                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                        : "bg-[#5DB1FF] hover:bg-[#4A9FE7] text-white"
                     }`}>
-                    {isLoading || isCapturing ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    {isProcessing || isCapturing ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500"></div>
                     ) : (
-                      <Camera size={24} className="text-white" />
+                      <Camera size={24} />
                     )}
-                    <span className="text-white font-medium">{isLoading || isCapturing ? "Memproses..." : "Ambil Foto"}</span>
+                    <span className="font-medium">
+                      {isCapturing 
+                        ? "Mengambil foto..." 
+                        : isProcessing 
+                        ? "Memproses..." 
+                        : "Ambil Foto"
+                      }
+                    </span>
                   </button>
                 )}
 
                 {/* File upload button */}
                 <button
                   onClick={handleFileSelect}
-                  disabled={isLoading}
+                  disabled={isProcessing}
                   className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
-                    isLoading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                    isProcessing
+                      ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                      : "bg-[#5DB1FF]/10 hover:bg-[#5DB1FF]/20 border-2 border-[#5DB1FF] text-[#5DB1FF]"
                   }`}>
-                  <FolderOpen size={24} className="text-white" />
-                  <span className="text-white font-medium">Pilih File</span>
+                  <FolderOpen size={24} />
+                  <span className="font-medium">Pilih File</span>
                 </button>
 
                 {/* Cancel button */}
                 <button
                   onClick={handleCloseCamera}
-                  disabled={isLoading}
+                  disabled={isProcessing}
                   className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-colors ${
-                    isLoading ? "bg-gray-700 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+                    isProcessing
+                      ? "bg-gray-200 cursor-not-allowed text-gray-400"
+                      : "bg-gray-200 hover:bg-gray-300 border border-gray-300 text-gray-600"
                   }`}>
-                  <X size={24} className="text-white" />
-                  <span className="text-white font-medium">Batal</span>
+                  <X size={24} />
+                  <span className="font-medium">Batal</span>
                 </button>
 
                 {/* Info text */}
-                <div className="text-gray-300 text-sm text-center mt-6">
+                <div className="text-gray-500 text-sm text-center mt-6">
                   <p>Anda dapat mengambil foto langsung dari kamera atau memilih file dari perangkat Anda.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/75 flex items-center justify-center z-10">
-              <div className="bg-white rounded-lg p-6 flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p className="text-gray-700 font-medium">
+          {isProcessing && (
+            <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
+              <div className="bg-white rounded-lg p-6 flex flex-col items-center space-y-4 border border-gray-200 shadow-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5DB1FF]"></div>
+                <p className="text-[#5DB1FF] font-medium">
                   {scannerType === "image"
                     ? "Menganalisis gambar..."
                     : scannerType === "receipt"

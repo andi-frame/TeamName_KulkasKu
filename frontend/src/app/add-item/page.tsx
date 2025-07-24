@@ -42,10 +42,13 @@ const Page = () => {
   const [processedItemIndexes, setProcessedItemIndexes] = useState<number[]>([]);
   const [currentItem, setCurrentItem] = useState<ReceiptItem | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // Set client flag dan tanggal default setelah hydration
+    setIsClient(true);
     const today = new Date();
-    const formatted = today.toISOString().split("T")[0]; // "yyyy-mm-dd"
+    const formatted = today.toISOString().split("T")[0];
     setStartDate(formatted);
   }, []);
 
@@ -296,7 +299,13 @@ const Page = () => {
               className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              placeholder={isClient ? undefined : "Loading..."}
             />
+            {isClient && startDate && (
+              <span className="text-xs text-gray-500 mt-1">
+                Tanggal: {new Date(startDate).toLocaleDateString('id-ID')}
+              </span>
+            )}
           </div>
 
           {/* Tanggal Kedaluwarsa */}
@@ -310,7 +319,13 @@ const Page = () => {
               className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
               value={expDate}
               onChange={(e) => setExpDate(e.target.value)}
+              placeholder={isClient ? undefined : "Loading..."}
             />
+            {isClient && expDate && (
+              <span className="text-xs text-gray-500 mt-1">
+                Kedaluwarsa: {new Date(expDate).toLocaleDateString('id-ID')}
+              </span>
+            )}
           </div>
 
           {/* Deskripsi */}

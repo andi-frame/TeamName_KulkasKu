@@ -16,8 +16,8 @@ export function ContinueReceiptModal(props: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full my-8 p-6">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
