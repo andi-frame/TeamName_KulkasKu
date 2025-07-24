@@ -1,6 +1,6 @@
 "use client";
 
-import { toast } from 'sonner'
+import { toast } from "sonner";
 
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, Scan } from "lucide-react";
@@ -43,6 +43,7 @@ const Page = () => {
   const [currentItem, setCurrentItem] = useState<ReceiptItem | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Set client flag dan tanggal default setelah hydration
@@ -170,8 +171,13 @@ const Page = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     if (!name || !type || !amount || !amountType || !startDate || !expDate) {
       toast.error("Semua field wajib diisi kecuali deskripsi.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -202,6 +208,8 @@ const Page = () => {
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
       toast.error("Gagal menambahkan item.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,9 +310,7 @@ const Page = () => {
               placeholder={isClient ? undefined : "Loading..."}
             />
             {isClient && startDate && (
-              <span className="text-xs text-gray-500 mt-1">
-                Tanggal: {new Date(startDate).toLocaleDateString('id-ID')}
-              </span>
+              <span className="text-xs text-gray-500 mt-1">Tanggal: {new Date(startDate).toLocaleDateString("id-ID")}</span>
             )}
           </div>
 
@@ -322,9 +328,7 @@ const Page = () => {
               placeholder={isClient ? undefined : "Loading..."}
             />
             {isClient && expDate && (
-              <span className="text-xs text-gray-500 mt-1">
-                Kedaluwarsa: {new Date(expDate).toLocaleDateString('id-ID')}
-              </span>
+              <span className="text-xs text-gray-500 mt-1">Kedaluwarsa: {new Date(expDate).toLocaleDateString("id-ID")}</span>
             )}
           </div>
 
@@ -346,7 +350,10 @@ const Page = () => {
 
         {/* Submit */}
         <div className="w-full pt-10">
-          <button type="submit" className="text-xs text-center w-full py-2 bg-[#5DB1FF] rounded-md text-white font-semibold">
+          <button
+            disabled={isSubmitting}
+            type="submit"
+            className="text-xs text-center w-full py-2 bg-[#5DB1FF] rounded-md text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
             Tambah
           </button>
         </div>
