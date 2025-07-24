@@ -206,12 +206,12 @@ const Page = () => {
         <div className="flex space-x-4 mt-6">
           <button
             onClick={handleCookingComplete}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-            ✅ Sudah Dimasak
+            className="bg-green-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-green-600 transition-colors shadow-md ring-1 ring-gray-200">
+            ✅ Klik Jika Sudah Dimasak
           </button>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-2">
           <a href={share_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
             🔗 Lebih Lengkap
           </a>
