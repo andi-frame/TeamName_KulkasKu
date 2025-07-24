@@ -3,66 +3,110 @@
 import { User } from "@/types/user.types";
 import api from "@/utils/axios";
 import { UserCircle, X, Plus } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
+interface Tag {
+  Tag: string;
+}
+
+interface UserPreferences {
+  PreferredTags: Tag[];
+  AvgCookingTime: number;
+  AvgCalories: number;
+  ServingPreference: number;
+}
+
 export default function ProfilePage() {
-  const [, setUser] = useState<User>();
-
-  useEffect(() => {
-    const getUserProfile = async () => {
-        const res = await api.get("/auth/me");
-        setUser(res.data.profile);
-
-    }
-
-    getUserProfile()
-  }, []);
-
-  const [chips, setChips] = useState(["Foodie", "Vegan", "Chef", "Low-carb"]);
+  const [user, setUser] = useState<User | null>(null);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newChip, setNewChip] = useState("");
 
-  const handleAddChip = () => {
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        // Fetch user preferences
+        const res = await api.get("/profile");
+        console.log(res.data);
+        setUser(res.data.profile);
+        setPreferences(res.data.preferences);
+      } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
+
+  const handleAddChip = async () => {
     const trimmedChip = newChip.trim();
-    if (trimmedChip && !chips.includes(trimmedChip)) {
-      setChips([...chips, trimmedChip]);
+    if (!trimmedChip || !preferences) return;
+
+    try {
+      // Update local state
+      setPreferences({ ...preferences });
+      setNewChip("");
+      setShowModal(false);
+    } catch (error) {
+      console.error("Failed to add tag:", error);
     }
-    setNewChip("");
-    setShowModal(false);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRemoveChip = (indexToRemove: any) => {
-    setChips(chips.filter((_, index) => index !== indexToRemove));
+  const handleRemoveChip = async (indexToRemove: number) => {
+    if (!preferences) return;
+
+    try {
+      // Update backend
+      const newTags = preferences.PreferredTags.filter((_, index) => index !== indexToRemove);
+
+      // Update local state
+      setPreferences({ ...preferences, PreferredTags: newTags });
+    } catch (error) {
+      console.error("Failed to remove tag:", error);
+    }
   };
+
+  if (!user || !preferences) {
+    return <div className="w-full pt-20 p-4">Loading profile...</div>;
+  }
 
   return (
     <div className="w-full pt-20 p-4 flex flex-col justify-start gap-3 relative">
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-2 pt-6">
-        <div className="bg-[#CBD5E1] rounded-full p-3">
-          <UserCircle size={64} strokeWidth={1.5} />
-        </div>
-        <div className="text-lg font-semibold">{"John Doe"}</div>
-        <div className="text-sm text-gray-500">johndoe@example.com</div>
+        {user.ImageURL ? (
+          <Image src={user.ImageURL} width={150} height={150} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+        ) : (
+          <div className="bg-[#CBD5E1] rounded-full p-3">
+            <UserCircle size={64} strokeWidth={1.5} />
+          </div>
+        )}
+        <div className="text-lg font-semibold">{user.Name}</div>
+        <div className="text-sm text-gray-500">{user.Email}</div>
+      </div>
+
+      {/* Avg Cooking Time */}
+      <div className="pt-6">
+        <div className="text-sm mb-2">Average Cooking Time: {preferences.AvgCookingTime}</div>
+        <div className="text-sm mb-2">Average Calories: {preferences.AvgCalories}</div>
       </div>
 
       {/* Chips Section */}
       <div className="pt-6">
         <div className="text-sm font-semibold mb-2">Tags</div>
         <div className="flex flex-wrap gap-2 mb-4">
-          {chips.map((chip, index) => (
+          {preferences.PreferredTags.map((tag, index) => (
             <span
               key={index}
               className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-800 rounded-full font-medium">
-              {chip}
+              {tag.Tag}
               <button onClick={() => handleRemoveChip(index)} className="hover:text-red-500">
                 <X size={12} strokeWidth={2} />
               </button>
             </span>
           ))}
 
-          {/* + Add New Keyword Chip */}
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-1 text-xs px-3 py-1 bg-[#E2E8F0] text-gray-600 rounded-full hover:bg-[#cbd5e1] font-medium">
@@ -74,7 +118,7 @@ export default function ProfilePage() {
 
       {/* Modal Overlay */}
       {showModal && (
-        <div className="fixed inset-0 bg-tranparent bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-md shadow-md p-6 w-80 flex flex-col gap-4">
             <div className="text-sm font-semibold">Tambahkan Kata Kunci</div>
             <input
