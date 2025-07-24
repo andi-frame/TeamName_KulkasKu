@@ -14,6 +14,7 @@ import (
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/middleware"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
 )
@@ -71,17 +72,9 @@ func (authService *AuthService) MeHandler(c *gin.Context) {
 // Profile
 func GetUserProfile(c *gin.Context) {
 	// Get user ID from context
-	userIDValue, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	userID, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	userCtx, _ := c.Get("user")
+	userData := userCtx.(middleware.JWTUserData)
+	userID, _ := uuid.Parse(userData.ID)
 
 	// Fetch user
 	var user schema.User
