@@ -67,12 +67,23 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUpdatePreferencesClick = async () => {
+    try {
+      const res = await api.post("/admin/recipe/update-preferences");
+      if (res.status === 200) {
+        alert("Successfully updated preferences");
+      }
+    } catch {
+      console.error("Failed to update preferences");
+    }
+  };
+
   if (!user || !preferences) {
     return <div className="w-full pt-20 p-4">Loading profile...</div>;
   }
 
   return (
-    <div className="w-full pt-20 p-4 flex flex-col justify-start gap-3 relative">
+    <div className="w-full pt-5 p-4 flex flex-col justify-start gap-3 relative">
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-2 pt-6">
         {user.ImageURL ? (
@@ -85,6 +96,14 @@ export default function ProfilePage() {
         <div className="text-lg font-semibold">{user.Name}</div>
         <div className="text-sm text-gray-500">{user.Email}</div>
       </div>
+
+      {user.Email === "andifarhan1094@gmail.com" && (
+        <div className="w-full flex justify-center">
+          <button className="px-2 py-1 bg-blue-500 text-sm shadow rounded-sm text-white" onClick={handleUpdatePreferencesClick}>
+            Update Preference
+          </button>
+        </div>
+      )}
 
       {/* Avg Cooking Time */}
       <div className="pt-6">
