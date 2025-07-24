@@ -1,19 +1,108 @@
 "use client";
 
 import { useRecipeStore } from "@/store/useRecipeStore";
+import { useRecipeTrackingStore } from "@/store/useRecipeTrackingStore";
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const Page = () => {
   const router = useRouter();
   const { recipeDetail } = useRecipeStore();
+  const { trackDetailPageEnter, trackDetailPageExit, trackCookingComplete, currentRecipe } = useRecipeTrackingStore();
+  const [hasTrackedEntry, setHasTrackedEntry] = useState(false);
+
+  // Track page entry
+  useEffect(() => {
+    if (recipeDetail && !hasTrackedEntry) {
+      const recipeData = {
+        id: recipeDetail.id || recipeDetail.slug,
+        title: recipeDetail.title,
+        slug: recipeDetail.slug,
+        cooking_time: recipeDetail.cooking_time,
+        calories: recipeDetail.calories || "0",
+        price: recipeDetail.price,
+        tags: recipeDetail.tags || [],
+      };
+
+      trackDetailPageEnter(recipeData);
+      setHasTrackedEntry(true);
+    }
+  }, [recipeDetail, trackDetailPageEnter, hasTrackedEntry]);
+
+  // Track page exit
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentRecipe) {
+        trackDetailPageExit();
+      }
+    };
+
+    const handleRouteChange = () => {
+      if (currentRecipe) {
+        trackDetailPageExit();
+      }
+    };
+
+    // navigates away or closes tab
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function (...args) {
+      handleRouteChange();
+      return originalPushState.apply(this, args);
+    };
+
+    window.history.replaceState = function (...args) {
+      handleRouteChange();
+      return originalReplaceState.apply(this, args);
+    };
+
+    window.addEventListener("popstate", handleRouteChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handleRouteChange);
+
+      // Restore original methods
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+
+      // Final cleanup
+      if (currentRecipe) {
+        trackDetailPageExit();
+      }
+    };
+  }, [trackDetailPageExit, currentRecipe]);
+
+  const handleBack = () => {
+    trackDetailPageExit();
+    router.back();
+  };
+
+  const handleCookingComplete = () => {
+    if (recipeDetail) {
+      const recipeData = {
+        id: recipeDetail.id || recipeDetail.slug,
+        title: recipeDetail.title,
+        slug: recipeDetail.slug,
+        cooking_time: recipeDetail.cooking_time,
+        calories: recipeDetail.calories || "0",
+        price: recipeDetail.price,
+        tags: recipeDetail.tags || [],
+      };
+
+      trackCookingComplete(recipeData);
+    }
+  };
 
   if (!recipeDetail)
     return (
       <>
-        <div className="flex pt-6" onClick={() => router.back()}>
+        <div className="flex pt-6" onClick={handleBack}>
           <ChevronLeft /> <span>Kembali</span>
         </div>
         <p>No detail found</p>
@@ -45,7 +134,7 @@ const Page = () => {
 
   return (
     <>
-      <div className="flex pt-6" onClick={() => router.back()}>
+      <div className="flex pt-6" onClick={handleBack}>
         <ChevronLeft /> <span>Kembali</span>
       </div>
       <div className="max-w-2xl mx-auto p-4 space-y-6">
@@ -112,6 +201,14 @@ const Page = () => {
                 </li>
               ))}
           </ol>
+        </div>
+
+        <div className="flex space-x-4 mt-6">
+          <button
+            onClick={handleCookingComplete}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+            ✅ Sudah Dimasak
+          </button>
         </div>
 
         <div className="mt-4">
