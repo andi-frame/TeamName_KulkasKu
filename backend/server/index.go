@@ -41,6 +41,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.ReceiptRoute(r, cfg)
 	routes.RecipeRoute(r, cfg)
 	routes.ItemRoute(r, cfg)
+	routes.CartRoute(r, cfg)
 
 	// Recommendation route setup
 	recRepository := repository.NewRecommendationRepository(database.DB)

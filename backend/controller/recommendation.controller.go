@@ -33,15 +33,21 @@ func (c *RecommendationController) TrackRecipeInteraction(ctx *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (assume from auth middleware)
-	userID, _ := ctx.Get("user_id")
-	uid := userID.(uuid.UUID)
-
-	err := c.service.TrackRecipeInteraction(uid, req.RecipeID, req.ActivityType, req.ViewDuration, req.RecipeData)
+	/// Get user ID from context
+	user, _ := ctx.Get("user")
+	userData := user.(middleware.JWTUserData)
+	userIdStr := userData.ID
+	uid, err := uuid.Parse(userIdStr)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to track interaction"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
+
+	if _, exists := req.RecipeData["tags"]; !exists {
+		req.RecipeData["tags"] = []any{}
+	}
+
+	c.service.TrackRecipeInteraction(uid, req.RecipeID, req.ActivityType, req.ViewDuration, req.RecipeData)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Interaction tracked successfully"})
 }
