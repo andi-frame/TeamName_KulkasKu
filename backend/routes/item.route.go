@@ -21,7 +21,9 @@ func ItemRoute(r *gin.Engine, cfg config.Config) {
 	itemRoutes.POST("/create", controller.CreateNewItemHandler)
 	itemRoutes.GET("/all", controller.GetAllItemHandler)
 	itemRoutes.GET("/expired", controller.GetAllExpiredItemHandler)
+	itemRoutes.GET("/expired/search", controller.GetSearchedExpiredItemHandler)
 	itemRoutes.GET("/fresh", controller.GetAllFreshItemHandler)
+	itemRoutes.GET("/fresh/search", controller.GetSearchedFreshItemHandler)
 	itemRoutes.PUT("/update", controller.UpdateItemHandler)
 	itemRoutes.DELETE("/delete/:id", controller.DeleteItemHandler)
 
