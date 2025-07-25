@@ -168,21 +168,81 @@ docker-compose down
 
 ### Main Endpoints
 
-#### Items Management
+
+#### 🔐 Authentication & User Management
+- `POST /auth/register` - Register user baru
+- `POST /auth/login` - Login user
+- `POST /auth/logout` - Logout user
+- `GET /profile` - Get user profile data
+- `PUT /profile/update` - Update user profile
+- `GET /auth/refresh` - Refresh JWT token
+
+#### 📦 Items Management
 - `GET /items` - Get all items dengan filter & sorting
+- `GET /item/fresh` - Get fresh items (belum expired)
+- `GET /item/expired` - Get expired items
 - `POST /item/create` - Create new item
 - `PUT /item/update` - Update existing item
 - `DELETE /item/delete/:id` - Delete item
+- `GET /item/:id` - Get single item by ID
 
-#### AI Services  
-- `POST /predict/image` - Predict item dari foto
-- `POST /receipt/scan` - Analyze receipt OCR
-- `GET /barcode/:code` - Get product info by barcode
+#### 🤖 AI Services  
+- `POST /predict/image` - Predict item dari foto dengan AI
+- `POST /receipt/scan` - Analyze receipt OCR untuk multiple items
+- `GET /barcode/:code` - Get product info by barcode scanning
+- `POST /ai/analyze-condition` - Analyze kondisi makanan dari foto
+- `POST /ai/predict-expiry` - Predict tanggal kadaluwarsa berdasarkan foto
 
-#### Recipe System
-- `GET /recipe/recommendations` - Get recipe recommendations
-- `GET /recipe/detail/:id` - Get recipe details
-- `POST /recipe/track` - Track recipe interaction
+#### 🍳 Recipe System
+- `GET /recipe/search` - Search recipes dengan keyword
+- `GET /recipe/recommendations` - Get recipe recommendations berdasarkan ingredients
+- `GET /recipe/detail/:id` - Get recipe details lengkap
+- `POST /recipe/track` - Track recipe interaction untuk analytics
+- `GET /recipe/popular` - Get popular recipes
+- `GET /recipe/categories` - Get recipe categories
+
+#### 🛒 Shopping Cart Management
+- `GET /cart` - Get shopping cart items
+- `POST /cart/add` - Add item to shopping cart
+- `PUT /cart/update/:id` - Update cart item quantity
+- `DELETE /cart/remove/:id` - Remove item from cart
+- `DELETE /cart/clear` - Clear all cart items
+- `POST /cart/checkout` - Process cart checkout
+
+#### 📊 Analytics & Recommendations
+- `GET /analytics/usage` - Get user usage analytics
+- `GET /analytics/waste` - Get food waste statistics
+- `GET /analytics/trends` - Get food consumption trends
+- `POST /recommendation/track` - Track recommendation interactions
+- `GET /recommendation/history` - Get recommendation history
+
+#### 🔔 Notifications
+- `GET /notifications` - Get user notifications
+- `POST /notifications/mark-read/:id` - Mark notification as read
+- `GET /notifications/expiry-alerts` - Get expiry alert notifications
+- `PUT /notifications/settings` - Update notification preferences
+
+#### 📱 Mobile/PWA Features
+- `POST /device/register` - Register device for push notifications
+- `GET /app/version` - Get app version info
+- `GET /app/offline-data` - Get data for offline mode
+
+#### 🔍 Search & Filter
+- `GET /search/items` - Advanced search untuk items
+- `GET /search/recipes` - Advanced search untuk recipes
+- `GET /filters/categories` - Get available item categories
+- `GET /filters/types` - Get available item types
+
+#### 📈 Data Export/Import
+- `GET /export/items` - Export user items data
+- `POST /import/items` - Import items from file
+- `GET /backup/create` - Create user data backup
+- `POST /backup/restore` - Restore from backup
+
+#### 🛠️ System/Health
+- `GET /health` - Health check endpoint
+- `GET /version` - Get API version
+- `GET /status` - Get system status
 
 ## 🎯 Fitur yang Diimplementasikan
 
