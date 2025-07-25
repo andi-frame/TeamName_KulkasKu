@@ -26,6 +26,29 @@ func UpdateCart(cart *schema.Cart) error {
 	return database.DB.Save(cart).Error
 }
 
+func GetCartItems(cartID uuid.UUID) ([]schema.CartItem, error) {
+	var cartItems []schema.CartItem
+	err := database.DB.Where("cart_id = ?", cartID).Find(&cartItems).Error
+	return cartItems, err
+}
+
 func DeleteCart(cartID uuid.UUID) error {
-	return database.DB.Delete(&schema.Cart{}, cartID).Error
+	
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	result := tx.Where("cart_id = ?", cartID).Delete(&schema.CartItem{})
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+
+	if err := tx.Delete(&schema.Cart{}, cartID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
