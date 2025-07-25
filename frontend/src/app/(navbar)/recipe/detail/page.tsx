@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { IngredientsAvailability } from "@/components/recipe/ingredients-availability";
 
 const Page = () => {
   const router = useRouter();
@@ -168,17 +169,14 @@ const Page = () => {
 
         <div>
           <h2 className="text-md font-semibold mt-4">🧂 Bahan-Bahan</h2>
-          {!!ingredient_type &&
-            ingredient_type.map((group, i) => (
-              <div key={i} className="mt-2">
-                <p className="font-semibold text-sm">{group.name}</p>
-                <ul className="list-disc list-inside text-sm text-gray-700">
-                  {group.ingredients.map((item, idx) => (
-                    <li key={idx}>{item.description}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+
+          {ingredient_type && ingredient_type.length > 0 ? (
+            <IngredientsAvailability ingredientTypes={ingredient_type} recipeName={title || "Recipe"} />
+          ) : (
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <p className="text-gray-600">Bahan-bahan tidak tersedia</p>
+            </div>
+          )}
         </div>
 
         <div>
