@@ -5,6 +5,7 @@ import { Check, X, Plus, ShoppingCart } from 'lucide-react';
 import { IngredientType, Ingredient } from '../../types/recipe.types';
 import { Item } from '../../types/item.types';
 import api from '../../utils/axios';
+import { CartSelectionModal } from './cart-selection-modal';
 
 interface IngredientsAvailabilityProps {
   ingredientTypes: IngredientType[];
@@ -35,6 +36,8 @@ export function IngredientsAvailability({
   const [userItems, setUserItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [cartItems, setCartItems] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingIngredient, setPendingIngredient] = useState<Ingredient | null>(null);
 
   // Extract clean ingredient name from description (remove amounts, units, etc)
   const extractIngredientName = useCallback((description: string): string => {
@@ -160,7 +163,40 @@ export function IngredientsAvailability({
     setAvailabilityData(availability);
   }, [userItems, ingredientTypes, findBestMatch, extractIngredientName]);
 
-  const addToCart = async (ingredient: Ingredient) => {
+  // Show cart selection modal
+  const showCartModal = (ingredient: Ingredient) => {
+    setPendingIngredient(ingredient);
+    setIsModalOpen(true);
+  };
+
+  // Add ingredient to selected cart
+  const addToSelectedCart = async (cartId: string) => {
+    if (!pendingIngredient) return;
+
+    try {
+      await api.post('/cart/item/create', {
+        CartID: cartId,
+        Name: pendingIngredient.description,
+        Type: 'Bahan Masakan',
+        Amount: 1,
+        AmountType: 'pcs',
+        Desc: pendingIngredient.recommendation || pendingIngredient.description,
+      });
+
+      // Update local state
+      setCartItems(prev => [...prev, pendingIngredient.description]);
+      
+      alert(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja!`);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Gagal menambahkan ke keranjang belanja');
+    }
+  };
+
+  // Create new cart and add ingredient
+  const createNewCartAndAdd = async () => {
+    if (!pendingIngredient) return;
+
     try {
       const cartName = `Belanja - ${recipeName}`;
       
@@ -173,19 +209,20 @@ export function IngredientsAvailability({
 
       await api.post('/cart/item/create', {
         CartID: cartId,
-        Name: ingredient.description,
+        Name: pendingIngredient.description,
         Type: 'Bahan Masakan',
         Amount: 1,
         AmountType: 'pcs',
-        Desc: ingredient.recommendation || ingredient.description,
+        Desc: pendingIngredient.recommendation || pendingIngredient.description,
       });
 
-      setCartItems(prev => [...prev, ingredient.description]);
+      // Update local state
+      setCartItems(prev => [...prev, pendingIngredient.description]);
       
-      alert(`"${ingredient.description}" berhasil ditambahkan ke keranjang belanja!`);
+      alert(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja baru!`);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Gagal menambahkan ke keranjang belanja');
+      console.error('Error creating cart and adding item:', error);
+      alert('Gagal membuat keranjang belanja baru');
     }
   };
 
@@ -250,7 +287,7 @@ export function IngredientsAvailability({
                           </div>
                         ) : (
                           <button
-                            onClick={() => addToCart(ingredient)}
+                            onClick={() => showCartModal(ingredient)}
                             className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
                             title="Tambah ke keranjang belanja"
                           >
@@ -281,6 +318,16 @@ export function IngredientsAvailability({
           </div>
         </div>
       </div>
+
+      {/* Cart Selection Modal */}
+      <CartSelectionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCartSelected={addToSelectedCart}
+        onCreateNew={createNewCartAndAdd}
+        ingredientName={pendingIngredient?.description || ''}
+        recipeName={recipeName}
+      />
     </div>
   );
 }
