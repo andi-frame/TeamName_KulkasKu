@@ -202,12 +202,13 @@ docker-compose down
 - `GET /recipe/categories` - Get recipe categories
 
 #### 🛒 Shopping Cart Management
-- `GET /cart` - Get shopping cart items
-- `POST /cart/add` - Add item to shopping cart
-- `PUT /cart/update/:id` - Update cart item quantity
-- `DELETE /cart/remove/:id` - Remove item from cart
-- `DELETE /cart/clear` - Clear all cart items
-- `POST /cart/checkout` - Process cart checkout
+- `GET /cart/all` - Get all shopping carts
+- `GET /cart/:id` - Get cart details by ID
+- `GET /cart/:id/items` - Get cart items by cart ID
+- `POST /cart/create` - Create new shopping cart
+- `POST /cart/item/create` - Add item to shopping cart
+- `PUT /cart/update` - Update cart information
+- `DELETE /cart/delete/:id` - Delete cart
 
 #### 📊 Analytics & Recommendations
 - `GET /analytics/usage` - Get user usage analytics
