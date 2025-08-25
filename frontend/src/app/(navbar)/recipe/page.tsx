@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { LoadingOverlay } from "@/components/loading-overlay";
 import RecipeCard from "@/components/recipe/recipe-card";
 import RecipeHeader from "@/components/recipe/recipe-header";
@@ -34,7 +36,7 @@ const Page = () => {
     if (limit > 0 && limit <= 50) {
       fetchRecipes(limit);
     } else {
-      alert("Limit must be between 1 and 50.");
+      toast.error("Limit must be between 1 and 50.");
     }
   };
 
