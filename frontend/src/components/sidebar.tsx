@@ -66,7 +66,7 @@ export function SidebarDesktop() {
         })}
       </nav>
 
-      {/* Big Add button */}
+      {/* Add */}
       <div className="relative">
         <Link
           href="/add-item"
