@@ -1,6 +1,6 @@
 "use client";
 
-import { PcCase, BrainCircuit, Settings, Plus, ShoppingCart } from "lucide-react";
+import { PcCase, Salad, Settings, Plus, ShoppingCart, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils/utils";
@@ -10,8 +10,9 @@ export function SidebarDesktop() {
 
   const items = [
     { href: "/fridge", label: "kulkas", Icon: PcCase },
-    { href: "/recipe", label: "resep.ai", Icon: BrainCircuit },
+    { href: "/recipe", label: "resep.ai", Icon: Salad },
     { href: "/shopping-cart", label: "cart", Icon: ShoppingCart },
+    { href: "/chatroom", label: "chatbot", Icon: MessageSquare },
     { href: "/profile", label: "profile", Icon: Settings },
   ];
 
