@@ -12,8 +12,11 @@ func AuthRoute(r *gin.Engine, cfg config.Config) {
 
 	authService := controller.NewAuthService(cfg)
 	authRoutes.GET("/me", authService.MeHandler)
-	authRoutes.GET("/login", authService.LoginHandler)
-	authRoutes.GET("/callback", authService.CallbackHandler)
+	authRoutes.POST("/register", authService.RegisterHandler)
+	authRoutes.POST("/login", authService.LoginManualHandler)
+	authRoutes.GET("/google/login", authService.LoginHandler)
+	authRoutes.GET("/google/callback", authService.CallbackHandler)
+	authRoutes.POST("/logout", authService.LogoutHandler)
 
 	profileGroup := r.Group("/profile")
 	profileGroup.Use(middleware.JWTMiddleware())

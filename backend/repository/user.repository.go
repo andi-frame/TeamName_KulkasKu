@@ -41,10 +41,22 @@ func UpsertUserAccount(userInfo schema.UserAuthType) (*schema.User, error) {
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
-		log.Printf("Error creating user: %v", err)
-		return nil, err
+			log.Printf("Error creating user: %v", err)
+			return nil, err
 	}
 
 	log.Printf("Successfully created user: %s with email %s", user.ID, user.Email)
+	return &user, nil
+}
+
+func CreateUser(user *schema.User) error {
+	return database.DB.Create(user).Error
+}
+
+func GetUserByEmail(email string) (*schema.User, error) {
+	var user schema.User
+	if err := database.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
 	return &user, nil
 }
