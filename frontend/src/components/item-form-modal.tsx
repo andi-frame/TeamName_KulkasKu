@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import React, { useState, useEffect } from "react";
 import { X, Check } from "lucide-react";
 import { ReceiptItem } from "@/types/scanner.types";
@@ -54,7 +56,7 @@ export function ItemFormModal(props: Props) {
     e.preventDefault();
     
     if (!name || !type || !amount || !amountType || !startDate || !expDate) {
-      alert("Semua field wajib diisi kecuali deskripsi.");
+      toast.error("Semua field wajib diisi kecuali deskripsi.");
       return;
     }
 

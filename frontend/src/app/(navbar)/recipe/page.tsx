@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { LoadingOverlay } from "@/components/loading-overlay";
 import RecipeCard from "@/components/recipe/recipe-card";
 import RecipeHeader from "@/components/recipe/recipe-header";
@@ -34,7 +36,7 @@ const Page = () => {
     if (limit > 0 && limit <= 50) {
       fetchRecipes(limit);
     } else {
-      alert("Limit must be between 1 and 50.");
+      toast.error("Limit must be between 1 and 50.");
     }
   };
 
@@ -60,9 +62,9 @@ const Page = () => {
             Apply
           </button>
         </form>
-        <div className="flex flex-wrap w-full">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {recipes.map((recipe, index) => (
-            <div key={recipe.id + index} className="w-1/2 p-2">
+            <div key={recipe.id + index} className="w-full">
               <RecipeCard recipe={recipe} />
             </div>
           ))}

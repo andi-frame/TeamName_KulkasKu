@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import React, { useState, useRef, useEffect } from "react";
 import api from "@/utils/axios";
 import { ScannerSelection } from "./scanner-selection";
@@ -117,7 +119,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       return true;
     } catch (error) {
       console.error("Camera access error:", error);
-      alert("Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.");
+      toast.error("Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.");
       setMode("selection");
       return false;
     }
@@ -148,7 +150,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       scanningIntervalRef.current = setInterval(scanLoop, 500);
     } catch (error) {
       console.error("Barcode scanning error:", error);
-      alert("Error memulai scanner barcode. Silakan coba lagi.");
+      toast.error("Error memulai scanner barcode. Silakan coba lagi.");
       setIsScanning(false);
     }
   };
@@ -158,7 +160,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
     const canvas = canvasRef.current;
 
     if (!video || !canvas || !isCameraReady) {
-      alert("Camera belum siap. Silakan tunggu sebentar.");
+      toast.error("Camera belum siap. Silakan tunggu sebentar.");
       return;
     }
 
@@ -196,11 +198,11 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
                   await processBarcodeImage(file);
                 }
               } else {
-                alert("Gagal mengambil foto. Silakan coba lagi.");
+                toast.error("Gagal mengambil foto. Silakan coba lagi.");
               }
             } catch (error) {
               console.error("Processing error:", error);
-              alert("Gagal memproses gambar. Silakan coba lagi.");
+              toast.error("Gagal memproses gambar. Silakan coba lagi.");
             } finally {
               setIsProcessing(false);
             }
@@ -211,7 +213,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       }
     } catch (error) {
       console.error("Capture error:", error);
-      alert("Gagal mengambil foto. Silakan coba lagi.");
+      toast.error("Gagal mengambil foto. Silakan coba lagi.");
       setIsCapturing(false);
       setIsProcessing(false);
     }
@@ -280,7 +282,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         onBarcodeResult?.(result);
         handleCloseCamera();
       } else {
-        alert("Failed to get product info");
+        toast.error("Failed to get product info");
         setTimeout(() => {
           startBarcodeScanning();
         }, 1000);
@@ -294,7 +296,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         const axiosError = error as any;
         errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to get product info";
       }
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
 
       setTimeout(() => {
         startBarcodeScanning();
@@ -322,7 +324,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         onImageResult?.(result);
         handleCloseCamera();
       } else {
-        alert("Failed to predict item from image - invalid response");
+        toast.error("Failed to predict item from image - invalid response");
       }
     } catch (error) {
       console.error("Image prediction error:", error);
@@ -333,7 +335,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         const axiosError = error as any;
         errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to predict item from image";
       }
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
@@ -355,7 +357,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         onReceiptResult?.(result.data);
         handleCloseCamera();
       } else {
-        alert("Failed to analyze receipt");
+        toast.error("Failed to analyze receipt");
       }
     } catch (error) {
       console.error("Receipt analysis error:", error);
@@ -366,7 +368,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
         const axiosError = error as any;
         errorMessage = axiosError.response?.data?.error || axiosError.message || "Failed to analyze receipt";
       }
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
@@ -389,18 +391,18 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
             console.log("Barcode from image:", result.getText());
             await scanBarcode(result.getText());
           } else {
-            alert("Tidak ada barcode yang terdeteksi dalam gambar.");
+            toast.error("Tidak ada barcode yang terdeteksi dalam gambar.");
           }
         } catch (error) {
           console.error("Barcode decode error:", error);
-          alert("Tidak ada barcode yang terdeteksi dalam gambar.");
+          toast.error("Tidak ada barcode yang terdeteksi dalam gambar.");
         }
       };
 
       img.src = URL.createObjectURL(file);
     } catch (error) {
       console.error("Barcode image processing error:", error);
-      alert("Gagal memproses gambar barcode.");
+      toast.error("Gagal memproses gambar barcode.");
     }
   };
 
@@ -416,7 +418,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Silakan pilih file gambar (JPG, PNG, dll.)");
+      toast.error("Silakan pilih file gambar (JPG, PNG, dll.)");
       return;
     }
 
@@ -432,7 +434,7 @@ export function FoodScanner({ onBarcodeResult, onImageResult, onReceiptResult, o
       }
     } catch (error) {
       console.error("File processing error:", error);
-      alert("Gagal memproses file. Silakan coba lagi.");
+      toast.error("Gagal memproses file. Silakan coba lagi.");
     } finally {
       setIsProcessing(false);
       // Reset file input

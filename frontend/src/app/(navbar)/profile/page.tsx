@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { User } from "@/types/user.types";
 import api from "@/utils/axios";
 import { UserCircle, X, Plus } from "lucide-react";
@@ -71,7 +73,7 @@ export default function ProfilePage() {
     try {
       const res = await api.post("/admin/recipe/update-preferences");
       if (res.status === 200) {
-        alert("Successfully updated preferences");
+        toast.success("Successfully updated preferences");
       }
     } catch {
       console.error("Failed to update preferences");

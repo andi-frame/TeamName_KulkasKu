@@ -1,7 +1,6 @@
 // Icons
 import { Item } from "@/types/item.types";
-import { ChevronRight } from "lucide-react";
-import { LeafIcon } from "lucide-react";
+import { ChevronRight, Leaf as LeafIcon } from "lucide-react";
 
 export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
   function formattedDate() {
@@ -16,12 +15,25 @@ export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
   }
 
   const exp = new Date(ExpDate);
-  const daysLeft = Math.ceil((exp.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const now = new Date();
+  const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Choose background color
+  const bgColor =
+    daysLeft <= 0 ? "bg-red-500" : daysLeft <= 7 ? "bg-yellow-400" : "bg-green-500";
+
+  // Helper for the subtitle line
+  const expiryText =
+    daysLeft < 0
+      ? `kedaluwarsa sejak ${Math.abs(daysLeft)} hari lalu`
+      : daysLeft === 0
+      ? "kedaluwarsa hari ini"
+      : `kedaluwarsa dalam ${daysLeft} hari`;
 
   return (
     <div className="relative w-full max-w-md rounded-lg shadow-md">
-      {/* Green background */}
-      <div className="bg-green-500 h-20 rounded-lg w-full"></div>
+      {/* Dynamic background */}
+      <div className={`${bgColor} h-20 rounded-lg w-full`} />
 
       {/* White content card */}
       <div className="absolute inset-0 ml-2 bg-white rounded-lg p-3 flex flex-col justify-center">
@@ -33,17 +45,13 @@ export function FoodCard({ Name, Amount, StartDate, ExpDate }: Item) {
             <div className="flex flex-col">
               <div className="text-base font-medium">{Name}</div>
               <div className="text-[10px]">dari {formattedDate()}</div>
-              {daysLeft > 0 ? (
-                <div className="text-[10px]">kedaluwarsa dalam {daysLeft} hari</div>
-              ) : (
-                <div className="text-[10px]">kedaluwarsa sejak {daysLeft} hari lalu</div>
-              )}
+              <div className="text-[10px]">{expiryText}</div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-5">
             <div className="text-black text-xs">{Amount}</div>
             <div className="flex items-center gap-0.5">
-              <div className="text-black text-[10px] ">detail</div>
+              <div className="text-black text-[10px]">detail</div>
               <div className="w-5 h-4 relative">
                 <ChevronRight size={18} />
               </div>

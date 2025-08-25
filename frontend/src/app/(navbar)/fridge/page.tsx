@@ -14,9 +14,17 @@ export default function Fridge() {
       <div className="sticky top-0 z-10">
         <FilterSortBar />
       </div>
-      <div className="px-4">
-        <ExpiredGroup/>
-        <FreshGroup />
+
+      <div className="px-4 md:px-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 md:gap-6 w-full">
+          <section className="md:col-span-1 space-y-4">
+            <ExpiredGroup />
+          </section>
+
+          <section className="md:col-span-2">
+            <FreshGroup />
+          </section>
+        </div>
       </div>
     </div>
   );
