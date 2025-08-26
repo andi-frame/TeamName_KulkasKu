@@ -73,9 +73,9 @@ func LoadConfig() Config {
 	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 	if redirectURL == "" {
 		if isProduction {
-			redirectURL = "https://os80w4wwsggwosc4o88k0csc.kirisame.jp.net/auth/callback"
+			redirectURL = "https://os80w4wwsggwosc4o88k0csc.kirisame.jp.net/auth/google/callback"
 		} else {
-			redirectURL = "http://localhost:5000/auth/callback"
+			redirectURL = "http://localhost:5000/auth/google/callback"
 		}
 	}
 

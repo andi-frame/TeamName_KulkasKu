@@ -130,7 +130,7 @@ go run seeder.go
 
 ### Frontend (.env.local)
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
 ### Backend Go (.env)

@@ -62,10 +62,18 @@ func (authService *AuthService) MeHandler(c *gin.Context) {
 		return
 	}
 
+	userID, _ := uuid.Parse(claims["id"].(string))
+	var userPref schema.UserPreference
+	hasOnboarded := false
+	if err := database.DB.Where("user_id = ?", userID).First(&userPref).Error; err == nil {
+		hasOnboarded = userPref.HasOnboarded
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"id":    claims["id"],
-		"email": claims["email"],
-		"name":  claims["name"],
+		"id":             claims["id"],
+		"email":          claims["email"],
+		"name":           claims["name"],
+		"has_onboarded": hasOnboarded,
 	})
 }
 
@@ -188,6 +196,79 @@ func (authService *AuthService) LogoutHandler(c *gin.Context) {
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
+
+func (authService *AuthService) RegisterHandler(c *gin.Context) {
+	var input schema.UserCreate
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := repository.GetUserByEmail(input.Email)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+		return
+	}
+
+	user := schema.User{
+		Name:  input.Name,
+		Email: input.Email,
+	}
+
+	if err := user.HashPassword(input.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	if err := repository.CreateUser(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+}
+
+func (authService *AuthService) LoginManualHandler(c *gin.Context) {
+	var input schema.UserLogin
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := repository.GetUserByEmail(input.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	if err := user.CheckPassword(input.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	tokenStr, err := authService.createJWT(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create JWT"})
+		return
+	}
+
+	sameSiteMode := http.SameSiteLaxMode
+	if authService.config.IsProduction {
+		sameSiteMode = http.SameSiteNoneMode
+	}
+	c.SetSameSite(sameSiteMode)
+	c.SetCookie(
+		"token",
+		tokenStr,
+		3600*24, // 24 hours
+		"/",
+		authService.config.CookieDomain,
+		authService.config.CookieSecure,
+		true, // httpOnly
+	)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }
 
 // HELPER
