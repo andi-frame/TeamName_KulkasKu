@@ -2,8 +2,9 @@
 
 import { User } from "@/types/user.types";
 import api from "@/utils/axios";
-import { UserCircle, X, Plus } from "lucide-react";
+import { UserCircle, X, Plus, LogOut } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Tag {
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newChip, setNewChip] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -75,6 +77,15 @@ export default function ProfilePage() {
       }
     } catch {
       console.error("Failed to update preferences");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+      router.push("/auth");
+    } catch (error) {
+      console.error("Failed to logout:", error);
     }
   };
 
@@ -162,6 +173,17 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Logout Button */}
+      <div className="w-full flex justify-center mt-8">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+        >
+          <LogOut size={18} />
+          <span>Logout</span>
+        </button>
+      </div>
     </div>
   );
 }

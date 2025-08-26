@@ -4,44 +4,44 @@ import { Header } from "@/components/header";
 import { Navbar } from "@/components/navbar";
 import api from "@/utils/axios";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-// import { FoodScanner } from "@/components/food-scanner";
+import { useEffect, useState } from "react";
+import { LoadingOverlay } from "@/components/loading-overlay";
 
 export default function Home() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const checkAuthUser = async () => {
       try {
         const res = await api.get("/auth/me");
         if (res.status === 200) {
-          router.push("/fridge");
+          if (res.data.has_onboarded) {
+            router.push("/fridge");
+          } else {
+            router.push("/onboarding");
+          }
         } else {
           router.push("/auth");
         }
       } catch (error: unknown) {
         console.error("Auth check failed:", error);
         router.push("/auth");
+      } finally {
+        setLoading(false);
       }
     };
     checkAuthUser();
   }, [router]);
 
+  if (loading) {
+    return <LoadingOverlay />;
+  }
+
   return (
     <div className="bg-white">
       <Header></Header>
       <Navbar></Navbar>
-      {/* <MenuBar/> */}
-      {/* <BahanCard
-        NamaBahan="Bayam"
-        jumlah="2 ikat"
-        tanggalAwal={new Date(Date.now())}
-        tanggalKedaluwarsa={new Date(Date.now())}
-      /> */}
-      {/* <FoodScanner 
-        onBarcodeResult={(result) => console.log("Barcode result:", result)}
-        onImageResult={(result) => console.log("Image result:", result)}
-        onReceiptResult={(result) => console.log("Receipt result:", result)}
-      /> */}
     </div>
   );
 }

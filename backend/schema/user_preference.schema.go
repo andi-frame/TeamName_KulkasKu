@@ -21,6 +21,14 @@ type UserPreference struct {
 	ServingPreference int     `gorm:"default:2"`
 	LastUpdated       time.Time
 
+	// Onboarding data
+	DailyFoodCost float64
+	BMI           float64
+	DailyActivity string
+	HealthTarget  string
+	FridgeCapacity int
+	HasOnboarded  bool `gorm:"default:false"`
+
 	// Relationships for array fields
 	PreferredTags        []UserPreferenceTag
 	PreferredCategories  []UserPreferenceCategory
