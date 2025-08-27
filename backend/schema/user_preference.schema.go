@@ -27,7 +27,7 @@ type UserPreference struct {
 	DailyActivity string
 	HealthTarget  string
 	FridgeCapacity int
-	HasOnboarded  bool `gorm:"default:false"`
+	FridgeModel   string
 
 	// Relationships for array fields
 	PreferredTags        []UserPreferenceTag

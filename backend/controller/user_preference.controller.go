@@ -11,11 +11,12 @@ import (
 )
 
 type OnboardingRequest struct {
-	DailyFoodCost float64 `json:"daily_food_cost"`
-	BMI           float64 `json:"bmi"`
-	DailyActivity string  `json:"daily_activity"`
-	HealthTarget  string  `json:"health_target"`
-	FridgeCapacity int    `json:"fridge_capacity"`
+	DailyFoodCost  float64 `json:"daily_food_cost"`
+	BMI            float64 `json:"bmi"`
+	DailyActivity  string  `json:"daily_activity"`
+	HealthTarget   string  `json:"health_target"`
+	FridgeCapacity int     `json:"fridge_capacity"`
+	FridgeModel    string  `json:"fridge_model"`
 }
 
 func OnboardingHandler(c *gin.Context) {
@@ -42,10 +43,22 @@ func OnboardingHandler(c *gin.Context) {
 	userPref.DailyActivity = req.DailyActivity
 	userPref.HealthTarget = req.HealthTarget
 	userPref.FridgeCapacity = req.FridgeCapacity
-	userPref.HasOnboarded = true
+	userPref.FridgeModel = req.FridgeModel
 
 	if err := database.DB.Save(&userPref).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save onboarding data"})
+		return
+	}
+
+	// Update HasOnboarded flag on User
+	var user schema.User
+	if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	user.HasOnboarded = true
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user onboarding status"})
 		return
 	}
 

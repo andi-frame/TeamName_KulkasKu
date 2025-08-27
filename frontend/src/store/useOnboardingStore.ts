@@ -10,7 +10,7 @@ interface OnboardingState {
     dailyActivity: string;
     healthTarget: string;
     fridgeCapacity: number;
-    fridgeCapacityUnit: string;
+    fridgeModel: string;
   };
   setStep: (step: number) => void;
   setFormData: (data: Partial<OnboardingState['formData']>) => void;
@@ -26,10 +26,10 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
     bmi: 0,
     dailyActivity: '',
     healthTarget: '',
-    fridgeCapacity: 0,
-    fridgeCapacityUnit: 'liter',
+    fridgeCapacity: 300, // Default to Kulkas 2 Pintu
+    fridgeModel: 'Kulkas 2 Pintu',
   },
   setStep: (step) => set({ step }),
   setFormData: (data) => set((state) => ({ formData: { ...state.formData, ...data } })),
-  reset: () => set({ step: 1, formData: { dailyFoodCost: 0, height: 0, weight: 0, bmi: 0, dailyActivity: '', healthTarget: '', fridgeCapacity: 0, fridgeCapacityUnit: 'liter' } }),
+  reset: () => set({ step: 1, formData: { dailyFoodCost: 0, height: 0, weight: 0, bmi: 0, dailyActivity: '', healthTarget: '', fridgeCapacity: 300, fridgeModel: 'Kulkas 2 Pintu' } }),
 }));
