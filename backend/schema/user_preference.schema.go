@@ -22,12 +22,16 @@ type UserPreference struct {
 	LastUpdated       time.Time
 
 	// Onboarding data
-	DailyFoodCost float64
-	BMI           float64
-	DailyActivity string
-	HealthTarget  string
+	DailyFoodCost  float64
+	Age            int
+	BMI            float64
+	BloodSugar     int
+	Cholesterol    int
+	BloodPressure  string
+	DailyActivity  string
+	HealthTarget   string
 	FridgeCapacity int
-	FridgeModel   string
+	FridgeModel    string
 
 	// Relationships for array fields
 	PreferredTags        []UserPreferenceTag

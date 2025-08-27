@@ -18,25 +18,67 @@ export const Step2 = () => {
     <div>
       <h2 className="text-xl sm:text-2xl font-bold mb-4">Data Kesehatan</h2>
       <p className="mb-4 text-sm sm:text-base">Masukkan data kesehatan Anda.</p>
-      <div className="mb-4">
-        <label className="block mb-2 text-sm sm:text-base">Tinggi Badan (cm)</label>
-        <input
-          type="number"
-          value={formData.height || ''}
-          onChange={(e) => setFormData({ height: Number(e.target.value) })}
-          className="w-full px-4 py-2 border rounded-md"
-          placeholder="Contoh: 170"
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block mb-2 text-sm sm:text-base">Berat Badan (kg)</label>
-        <input
-          type="number"
-          value={formData.weight || ''}
-          onChange={(e) => setFormData({ weight: Number(e.target.value) })}
-          className="w-full px-4 py-2 border rounded-md"
-          placeholder="Contoh: 65"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Umur</label>
+          <input
+            type="number"
+            value={formData.age || ""}
+            onChange={(e) => setFormData({ age: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 25"
+          />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Tinggi Badan (cm)</label>
+          <input
+            type="number"
+            value={formData.height || ""}
+            onChange={(e) => setFormData({ height: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 170"
+          />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Berat Badan (kg)</label>
+          <input
+            type="number"
+            value={formData.weight || ""}
+            onChange={(e) => setFormData({ weight: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 65"
+          />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Gula Darah (mg/dL)</label>
+          <input
+            type="number"
+            value={formData.bloodSugar || ""}
+            onChange={(e) => setFormData({ bloodSugar: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 90"
+          />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Kolesterol (mg/dL)</label>
+          <input
+            type="number"
+            value={formData.cholesterol || ""}
+            onChange={(e) => setFormData({ cholesterol: Number(e.target.value) })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 150"
+          />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm sm:text-base">Tekanan Darah</label>
+          <input
+            type="text"
+            value={formData.bloodPressure || ""}
+            onChange={(e) => setFormData({ bloodPressure: e.target.value })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="Contoh: 120/80"
+          />
+        </div>
       </div>
       {formData.bmi > 0 && (
         <div className="mb-4">
