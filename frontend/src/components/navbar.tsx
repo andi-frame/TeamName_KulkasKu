@@ -1,6 +1,6 @@
 "use client";
 
-import { PcCase, BrainCircuit, Settings, Plus, ShoppingCart } from "lucide-react";
+import { PcCase, Salad, Settings, Plus, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
 export function Navbar() {
@@ -11,7 +11,7 @@ export function Navbar() {
         <span className="text-xs font-normal leading-snug">kulkas</span>
       </Link>
       <Link href={"/recipe"} className="flex flex-col items-center gap-2">
-        <BrainCircuit size={24} strokeWidth={1} />
+        <Salad size={24} strokeWidth={1} />
         <span className="text-xs font-normal leading-snug">resep.ai</span>
       </Link>
       <Link href={"/add-item"} className="relative flex flex-col items-center">
