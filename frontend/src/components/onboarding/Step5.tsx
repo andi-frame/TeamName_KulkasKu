@@ -24,7 +24,7 @@ const fridgeModels = [
 ];
 
 export const Step5 = () => {
-  const { formData, setFormData, setStep } = useOnboardingStore();
+  const { formData, setFormData, setStep, reset } = useOnboardingStore();
   const router = useRouter();
 
   const handleSelectModel = (model: {
@@ -38,6 +38,7 @@ export const Step5 = () => {
   const handleSubmit = async () => {
     try {
       await api.post("/profile/onboarding", formData);
+      reset();
       router.push("/fridge");
     } catch (error) {
       console.error("Failed to save onboarding data:", error);
