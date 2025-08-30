@@ -3,10 +3,12 @@
 import { PcCase, Salad, Settings, Plus, ShoppingCart, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/utils/utils";
 
 export function SidebarDesktop() {
   const pathname = usePathname();
+  const [showAddPopup, setShowAddPopup] = useState(false);
 
   const items = [
     { href: "/fridge", label: "kulkas", Icon: PcCase },
@@ -30,7 +32,7 @@ export function SidebarDesktop() {
     >
 
       <div className="flex flex-col items-center gap-2">
-        <Link href="/" aria-label="Home">
+        <Link href="/dashboard" aria-label="Home">
           <div className="h-12 w-12 rounded-md border border-slate-200 flex items-center justify-center text-sm font-semibold">
             <img src="/kulkasku-logo-1.png" alt="Logo" />
           </div>
@@ -69,8 +71,8 @@ export function SidebarDesktop() {
 
       {/* Add */}
       <div className="relative">
-        <Link
-          href="/add-item"
+        <button
+          onClick={() => setShowAddPopup(!showAddPopup)}
           className="
             group relative inline-flex items-center justify-center
             h-12 w-12 rounded-full bg-white
@@ -81,7 +83,42 @@ export function SidebarDesktop() {
           aria-label="Add item"
         >
           <Plus className="h-7 w-7" strokeWidth={1.25} color="#5DB1FF" />
-        </Link>
+        </button>
+        
+        {/* Popup */}
+        {showAddPopup && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 z-10" 
+              onClick={() => setShowAddPopup(false)}
+            />
+            
+            {/* Popup content */}
+            <div className="absolute bottom-0 left-16 z-20 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-2">
+              <Link
+                href="/add-item"
+                className="flex items-center text-sm text-slate-700 hover:bg-slate-50 transition"
+                onClick={() => setShowAddPopup(false)}
+              >
+                <div className="w-12 h-12 flex items-center justify-center hover:bg-gray-50">
+                  <Plus size={24} strokeWidth={1.5} color="#5DB1FF" />
+                </div>
+                <span className="text-[14px] font-normal text-gray-600 whitespace-nowrap pr-2">Add Item</span>
+              </Link>
+              <Link
+                href="/add-item"
+                className="flex items-center text-sm text-slate-700 hover:bg-slate-50 transition"
+                onClick={() => setShowAddPopup(false)}
+              >
+                <div className="w-12 h-12 flex items-center justify-center hover:bg-gray-50">
+                  <Salad size={24} strokeWidth={1.5} color="#5DB1FF" />
+                </div>
+                <span className="text-[14px] font-normal text-gray-600 whitespace-nowrap pr-2">Add Food</span>
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );
