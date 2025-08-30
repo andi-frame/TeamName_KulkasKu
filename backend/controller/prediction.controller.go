@@ -3,35 +3,21 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/utils"
 )
 
 type PredictionController struct {
-	predictionService service.AIPredictionService
+	predictionService *service.GeminiService
 }
 
-func NewPredictionController(predictionService service.AIPredictionService) *PredictionController {
+func NewPredictionController(predictionService *service.GeminiService) *PredictionController {
 	return &PredictionController{
 		predictionService: predictionService,
 	}
-}
-
-func isValidImageType(filename string) bool {
-	// Ambil ekstensi file dan ubah ke huruf kecil
-	ext := strings.ToLower(filename[strings.LastIndex(filename, ".")+1:])
-	validTypes := []string{"jpg", "jpeg", "png"}
-
-	for _, validType := range validTypes {
-		if ext == validType {
-			return true
-		}
-	}
-	return false
 }
 
 // Handler untuk endpoint prediksi item
@@ -47,7 +33,7 @@ func (pc *PredictionController) PredictItemHandler(ctx *gin.Context) {
 	}
 	defer file.Close()
 
-	if !isValidImageType(header.Filename) {
+	if !utils.IsValidImageType(header.Filename) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error":   "Format file tidak didukung. Hanya JPG, JPEG, PNG yang diizinkan.",
@@ -55,8 +41,7 @@ func (pc *PredictionController) PredictItemHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Validasi ukuran file (maksimal 10MB)
-	if header.Size > 10*1024*1024 {
+	if !utils.IsValidImageSize(header.Size) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error":   "Ukuran file terlalu besar. Maksimal 10MB",
@@ -64,18 +49,8 @@ func (pc *PredictionController) PredictItemHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Baca data gambar
-	imageData, err := io.ReadAll(file)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Gagal membaca file gambar",
-		})
-		return
-	}
-
 	// 2. Panggil service untuk melakukan prediksi
-	aiResult, err := pc.predictionService.PredictItem(imageData)
+	aiResult, err := pc.predictionService.PredictItem(file, header)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
