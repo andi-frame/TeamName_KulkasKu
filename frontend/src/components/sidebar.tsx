@@ -32,7 +32,7 @@ export function SidebarDesktop() {
     >
 
       <div className="flex flex-col items-center gap-2">
-        <Link href="/" aria-label="Home">
+        <Link href="/dashboard" aria-label="Home">
           <div className="h-12 w-12 rounded-md border border-slate-200 flex items-center justify-center text-sm font-semibold">
             <img src="/kulkasku-logo-1.png" alt="Logo" />
           </div>
