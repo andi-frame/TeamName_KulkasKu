@@ -1,55 +1,40 @@
 "use client";
 
 import { useRecipeStore } from "@/store/useRecipeStore";
-import { useRecipeTrackingStore } from "@/store/useRecipeTrackingStore";
-import { Recipe, RecipeDetail } from "@/types/recipe.types";
-import api from "@/utils/axios";
-import Image from "next/image";
+import { RecipeDetail } from "@/types/recipe.types";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 type Props = {
-  recipe: Recipe;
+  recipe: RecipeDetail;
 };
 
 const RecipeCard: React.FC<Props> = ({ recipe }) => {
   const router = useRouter();
   const { setRecipeDetail } = useRecipeStore();
-  const [data, setData] = useState<RecipeDetail | null>(null);
-  const { trackRecipeClick } = useRecipeTrackingStore();
-
-  useEffect(() => {
-    const getRecipeDetail = async () => {
-      const res = await api.get(`/recipe/detail/${recipe.slug}`);
-      setData(res.data);
-    };
-    getRecipeDetail();
-  }, [recipe.slug, setRecipeDetail]);
 
   const handleRecipeOnClick = () => {
-    if (data === null) return;
-    trackRecipeClick(recipe);
-    setRecipeDetail(data);
+    setRecipeDetail(recipe);
     router.push("/recipe/detail");
   };
 
-  if (data === null) return <div></div>;
-
   return (
-    <div className="rounded p-4 shadow max-w-sm" onClick={handleRecipeOnClick}>
-      <Image
-        src={`https://cdn.yummy.co.id/${recipe.cover_url}`}
-        height={100}
-        width={100}
-        alt={recipe.title}
-        className="w-full h-28 object-cover rounded"
-      />
-      <h2 className="text-xs font-bold mt-2">{recipe.title}</h2>
-      <p className="text-[9px] text-gray-600">By {recipe.author.name}</p>
-      <p className="text-[9px] text-gray-600">
-        ⭐ {recipe.rating}
-        {data.price > 0 ? ` • 💰 ${data.price / 1000}K` : ""} • ⏱️ {recipe.cooking_time} min
-      </p>
+    <div className="rounded-lg p-4 shadow-md border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow h-full flex flex-col" onClick={handleRecipeOnClick}>
+      <div className="flex-grow">
+        <h2 className="text-md font-bold text-gray-800 line-clamp-2">{recipe.title}</h2>
+        <p className="text-xs text-gray-600 mt-1">By {recipe.author.name}</p>
+        <div className="mt-2 text-xs text-gray-500 space-y-1">
+          <p>⭐ {recipe.rating.toFixed(1)} / 5</p>
+          <p>⏱️ {recipe.cooking_time} min</p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1">
+        {recipe.tags?.slice(0, 3).map((tag, index) => (
+          <span key={index} className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
+            {tag.name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };

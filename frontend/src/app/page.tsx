@@ -16,7 +16,7 @@ export default function Home() {
       try {
         const res = await api.get("/auth/me");
         if (res.status === 200) {
-          if (res.data.has_onboarded) {
+          if (res.data.has_onboarded === true) {
             router.push("/fridge");
           } else {
             router.push("/onboarding");

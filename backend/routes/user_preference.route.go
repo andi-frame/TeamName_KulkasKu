@@ -11,4 +11,5 @@ func UserPreferenceRoute(r *gin.Engine) {
 	userPreferenceRoutes.Use(middleware.JWTMiddleware())
 
 	userPreferenceRoutes.POST("/onboarding", controller.OnboardingHandler)
+	userPreferenceRoutes.PUT("/onboarding", controller.UpdateOnboardingDataHandler)
 }

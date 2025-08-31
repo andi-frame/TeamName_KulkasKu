@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { Item } from "@/types/item.types";
 import api from "@/utils/axios";
 import React, { useState } from "react";
@@ -26,7 +28,7 @@ const FoodCardPopup = ({ ID, Name, Type, Amount, AmountType, Desc, StartDate, Ex
 
   const updateButtonHandler = async () => {
     if (!hasChanges) {
-      alert("Tidak ada perubahan data.");
+      toast.error("Tidak ada perubahan data.");
       return;
     }
 
@@ -46,12 +48,12 @@ const FoodCardPopup = ({ ID, Name, Type, Amount, AmountType, Desc, StartDate, Ex
       });
 
       console.log("Response:", response.data);
-      alert("Item berhasil ditambahkan!");
+      toast.success("Item berhasil ditambahkan!");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
-      alert("Gagal memperbarui item.");
+      toast.error("Gagal memperbarui item.");
     }
   };
 
@@ -63,12 +65,12 @@ const FoodCardPopup = ({ ID, Name, Type, Amount, AmountType, Desc, StartDate, Ex
       const response = await api.delete(`/item/delete/${ID}`);
 
       console.log("Response:", response.data);
-      alert("Item berhasil dihapus!");
+      toast.success("Item berhasil dihapus!");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err.response?.data || err.message);
-      alert("Gagal menghapus item.");
+      toast.error("Gagal menghapus item.");
     }
   };
 

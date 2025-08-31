@@ -10,12 +10,13 @@ import (
 
 type User struct {
 	BaseModel
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Email     string `gorm:"unique"`
-	Password  string `json:"-"`
-	ImageURL  string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Name         string
+	Email        string `gorm:"unique"`
+	Password     string `json:"-"`
+	ImageURL     string
+	HasOnboarded bool   `gorm:"default:false"`
 }
 
 // Data type from oauth google

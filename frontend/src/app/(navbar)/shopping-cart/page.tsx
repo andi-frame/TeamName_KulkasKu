@@ -196,8 +196,8 @@ const Page = () => {
         <h1 className="text-xl font-bold text-gray-800">Cart Management</h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg flex items-center transition-colors text-xs">
-          <Plus size={14} />
+          className="bg-blue-500 gap-1 hover:bg-blue-600 text-white px-2 py-1 rounded-lg flex items-center transition-colors text-[14px]">
+          <Plus size={16} />
           Create
         </button>
       </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Check, X, Plus, ShoppingCart } from 'lucide-react';
 import { IngredientType, Ingredient } from '../../types/recipe.types';
@@ -186,10 +188,10 @@ export function IngredientsAvailability({
       // Update local state
       setCartItems(prev => [...prev, pendingIngredient.description]);
       
-      alert(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja!`);
+      toast.success(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja!`);
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Gagal menambahkan ke keranjang belanja');
+      toast.error('Gagal menambahkan ke keranjang belanja');
     }
   };
 
@@ -219,10 +221,10 @@ export function IngredientsAvailability({
       // Update local state
       setCartItems(prev => [...prev, pendingIngredient.description]);
       
-      alert(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja baru!`);
+      toast.success(`"${pendingIngredient.description}" berhasil ditambahkan ke keranjang belanja baru!`);
     } catch (error) {
       console.error('Error creating cart and adding item:', error);
-      alert('Gagal membuat keranjang belanja baru');
+      toast.error('Gagal membuat keranjang belanja baru');
     }
   };
 

@@ -63,17 +63,17 @@ func (authService *AuthService) MeHandler(c *gin.Context) {
 	}
 
 	userID, _ := uuid.Parse(claims["id"].(string))
-	var userPref schema.UserPreference
-	hasOnboarded := false
-	if err := database.DB.Where("user_id = ?", userID).First(&userPref).Error; err == nil {
-		hasOnboarded = userPref.HasOnboarded
+	var user schema.User
+	if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":             claims["id"],
 		"email":          claims["email"],
 		"name":           claims["name"],
-		"has_onboarded": hasOnboarded,
+		"has_onboarded": user.HasOnboarded,
 	})
 }
 
