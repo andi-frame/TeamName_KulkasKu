@@ -34,6 +34,7 @@ func Init() {
 		&schema.UserActivityRecipeTag{},
 		&schema.Cart{},
 		&schema.CartItem{},
+		&schema.FoodJournal{},
 	); err != nil {
 		log.Println("AutoMigrate warning:", err)
 	}

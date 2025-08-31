@@ -8,6 +8,7 @@ import (
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/controller"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/routes"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-contrib/cors"
@@ -53,6 +54,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.ItemRoute(r, cfg)
 	routes.CartRoute(r, cfg)
 	routes.UserPreferenceRoute(r)
+
+	// Food Journal route setup
+	foodJournalRepository := repository.NewFoodJournalRepository(database.DB)
+	foodJournalService := service.NewFoodJournalService(foodJournalRepository, geminiService)
+	foodJournalController := controller.NewFoodJournalController(foodJournalService)
+	routes.FoodJournalRoutes(r, foodJournalController)
 
 	return r
 }
