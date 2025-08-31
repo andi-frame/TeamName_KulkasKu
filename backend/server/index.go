@@ -35,26 +35,25 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
 
+	// Services
 	geminiService, err := service.NewGeminiService()
 	if err != nil {
 		log.Fatalf("Failed to create Gemini service: %v", err)
 	}
+	recipeService := service.NewRecipeService(geminiService, database.DB)
+
+	// Controllers
+	recipeController := controller.NewRecipeController(recipeService)
 
 	// Routes
 	routes.AuthRoute(r, cfg)
 	routes.PredictionRoute(r, cfg)
 	routes.ProductRoute(r, cfg)
 	routes.ReceiptRoute(r, geminiService)
-	routes.RecipeRoute(r, cfg)
+	routes.RecipeRoute(r, recipeController)
 	routes.ItemRoute(r, cfg)
 	routes.CartRoute(r, cfg)
 	routes.UserPreferenceRoute(r)
-
-	// Recommendation route setup
-	recRepository := repository.NewRecommendationRepository(database.DB)
-	recService := service.NewRecommendationService(recRepository)
-	recController := controller.NewRecommendationController(recService)
-	routes.RecommendationRoute(r, recController)
 
 	// Food Journal route setup
 	foodJournalRepository := repository.NewFoodJournalRepository(database.DB)

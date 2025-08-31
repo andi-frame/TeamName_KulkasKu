@@ -1,80 +1,43 @@
 package controller
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 
-	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/middleware"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-func AllRecipesHandler(c *gin.Context) {
-	// user, exists := c.Get("user")
-	// if !exists {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-	// 	return
-	// }
-
-	// userData := user.(middleware.JWTUserData)
-
-	keyword := c.DefaultQuery("keyword", "ayam-ketumbar-lada-buncis")
-	page := c.DefaultQuery("page", "1")
-	limit := c.DefaultQuery("limit", "10")
-
-	apiURL := "https://www.yummy.co.id/api/search/open-search/recipe?type=home&keyword=" +
-		keyword + "&page=" + page + "&limit=" + limit
-
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch from Yummy API"})
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response body"})
-		return
-	}
-
-	var recipeList schema.RecipeListResponse
-	if err := json.Unmarshal(body, &recipeList); err != nil {
-		fmt.Println("Unmarshal error:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse API response"})
-		return
-	}
-
-	c.JSON(http.StatusOK, recipeList.Data.Result)
+type RecipeController struct {
+	recipeService *service.RecipeService
 }
 
-func DetailRecipeHandler(c *gin.Context) {
-	slug := c.Param("slug")
-
-	resp, err := http.Get("https://www.yummy.co.id/api/recipe/detail/" + slug)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch data"})
-		return
+func NewRecipeController(recipeService *service.RecipeService) *RecipeController {
+	return &RecipeController{
+		recipeService: recipeService,
 	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
-		return
-	}
-
-	var detailResponse schema.RecipeDetailResponse
-	if err := json.Unmarshal(body, &detailResponse); err != nil {
-		fmt.Println("Unmarshal error:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-		return
-	}
-
-	c.JSON(resp.StatusCode, detailResponse.Data)
 }
 
-// func SearchRecipeHandler(c *gin.Context) {
+func (rc *RecipeController) GenerateRecipesHandler(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-// }
+	userData := user.(middleware.JWTUserData)
+	userID, err := uuid.Parse(userData.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	recipes, err := rc.recipeService.GenerateRecipes(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, recipes)
+}

@@ -26,7 +26,7 @@ export const useAuth = () => {
     try {
       await api.post('/auth/login', data);
       toast.success('Login successful!');
-      router.push('/fridge');
+      router.push('/');
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Login failed');
     } finally {
