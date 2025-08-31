@@ -103,7 +103,7 @@ const FoodJournalPage = () => {
       <div className="bg-white shadow-sm">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/add-choice" className="flex gap-1 items-center">
+            <Link href="/fridge" className="flex gap-1 items-center">
               <ChevronLeft size={24} strokeWidth={1.5} />
               <span className="text-lg font-medium">Jurnal Makanan</span>
             </Link>
