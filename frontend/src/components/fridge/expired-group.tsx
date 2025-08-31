@@ -7,6 +7,7 @@ import { Item } from "@/types/item.types";
 import Popup from "../popup";
 import FoodCardPopup from "./food-card-popup";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useExpiredStore } from "@/store/useExpiredStore";
 
 export default function ExpiredGroup() {
   const [expanded, setExpanded] = useState(false);
@@ -20,6 +21,8 @@ export default function ExpiredGroup() {
   const itemType = useSearchStore((state) => state.itemType);
   const sortBy = useSearchStore((state) => state.sortBy);
   const sortOrder = useSearchStore((state) => state.sortOrder);
+
+  const setHasExpiredItems = useExpiredStore((state) => state.setIsExpired);
 
   const cardHeight = 80;
   const expandedGap = 10;
@@ -71,6 +74,7 @@ export default function ExpiredGroup() {
           const data = response.data.data;
           const sortedData = sortItems(data);
           setExpiredItems(sortedData);
+          setHasExpiredItems(sortedData.length > 0);
 
           const height = expanded
             ? cardHeight + (sortedData.length - 1) * (cardHeight + expandedGap) + 60
@@ -79,6 +83,7 @@ export default function ExpiredGroup() {
 
         } catch (error) {
           console.error("Error fetching expired items:", error);
+          setHasExpiredItems(false);
         }
       };
       getSearchedExpiredItems();  
@@ -93,6 +98,7 @@ export default function ExpiredGroup() {
           const data = response.data.data;
           const sortedData = sortItems(data);
           setExpiredItems(sortedData);
+          setHasExpiredItems(sortedData.length > 0);
   
           const height = expanded
             ? cardHeight + (sortedData.length - 1) * (cardHeight + expandedGap) + 60
@@ -101,12 +107,13 @@ export default function ExpiredGroup() {
           
         } catch (error) {
           console.error("Error fetching expired items:", error);
+          setHasExpiredItems(false);
         }
       };
   
       getAllExpiredItems();
     }
-  }, [expanded, searchValue, startDate, expDate, itemType, sortBy, sortOrder, sortItems]);
+  }, [expanded, searchValue, startDate, expDate, itemType, sortBy, sortOrder, sortItems, setHasExpiredItems]);
 
   return (
     <>

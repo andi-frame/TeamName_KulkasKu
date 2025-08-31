@@ -214,158 +214,159 @@ const Page = () => {
   };
 
   return (
-    <div className="w-full p-4 flex flex-col justify-start gap-3">
-      <Link href="/fridge" className="flex gap-1 items-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+      <Link href="/fridge" className="flex gap-1 items-center mb-6">
         <ChevronLeft size={35} strokeWidth={1} />
         <span className="text-md font-extralight">Tambah Item</span>
       </Link>
 
-      <form onSubmit={handleSubmit} className="flex flex-col justify-center pt-6">
+      <form onSubmit={handleSubmit} className="flex flex-col justify-center">
         <div className="text-xl font-bold py-5">Tambahkan Item</div>
 
         <div className="mb-4">
-          <button
-            type="button"
-            onClick={handleScanClick}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white border-2 border-[#5DB1FF] text-[#5DB1FF] hover:bg-[#5DB1FF] hover:text-white rounded-lg font-semibold text-sm transition-all duration-200 active:scale-[0.98] group">
-            <Scan size={18} className="group-hover:animate-pulse" />
-            <span>Scan untuk isi otomatis</span>
-          </button>
+        <button
+          type="button"
+          onClick={handleScanClick}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white border-2 border-[#5DB1FF] text-[#5DB1FF] hover:bg-[#5DB1FF] hover:text-white rounded-lg font-semibold text-sm transition-all duration-200 active:scale-[0.98] group">
+          <Scan size={18} className="group-hover:animate-pulse" />
+          <span>Scan untuk isi otomatis</span>
+        </button>
         </div>
 
         <div className="flex flex-col gap-3">
-          {/* Nama Item */}
-          <div className="flex flex-col">
-            <label htmlFor="name" className="text-xs font-semibold py-1">
-              Nama Item
-            </label>
-            <input
-              type="text"
-              id="name"
-              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              placeholder="Masukkan nama item"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        {/* Nama Item */}
+        <div className="flex flex-col">
+          <label htmlFor="name" className="text-xs font-semibold py-1">
+          Nama Item
+          </label>
+          <input
+          type="text"
+          id="name"
+          className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+          placeholder="Masukkan nama item"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          />
+        </div>
 
-          {/* Tipe Item */}
-          <div className="flex flex-col">
-            <label htmlFor="type" className="text-xs font-semibold py-1">
-              Tipe Item
-            </label>
-            <input
-              list="type-options"
-              type="text"
-              id="type"
-              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              placeholder="Masukkan tipe item"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-            />
-            <datalist id="type-options">
-              <option value="Sayur" />
-              <option value="Rempah" />
-              <option value="Buah" />
-              <option value="Daging" />
-              <option value="Minuman" />
-              <option value="Lainnya" />
-            </datalist>
-          </div>
+        {/* Tipe Item */}
+        <div className="flex flex-col">
+          <label htmlFor="type" className="text-xs font-semibold py-1">
+          Tipe Item
+          </label>
+          <input
+          list="type-options"
+          type="text"
+          id="type"
+          className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+          placeholder="Masukkan tipe item"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          />
+          <datalist id="type-options">
+          <option value="Sayur" />
+          <option value="Rempah" />
+          <option value="Buah" />
+          <option value="Daging" />
+          <option value="Minuman" />
+          <option value="Lainnya" />
+          </datalist>
+        </div>
 
-          {/* Jumlah & Satuan */}
-          <div className="flex flex-col">
-            <label className="text-xs font-semibold py-1">Jumlah</label>
-            <div className="flex gap-3 w-full">
-              <input
-                type="float"
-                className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
-                placeholder="Masukkan jumlah"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              <select
-                className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
-                value={amountType}
-                onChange={(e) => setAmountType(e.target.value)}>
-                <option value="kilogram">Kilogram</option>
-                <option value="liter">Liter</option>
-                <option value="ikat">Ikat</option>
-                <option value="satuan">Satuan</option>
-              </select>
-            </div>
+        {/* Jumlah & Satuan */}
+        <div className="flex flex-col">
+          <label className="text-xs font-semibold py-1">Jumlah</label>
+          <div className="flex gap-3 w-full">
+          <input
+            type="float"
+            className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
+            placeholder="Masukkan jumlah"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <select
+            className="text-xs ring-1 ring-[#CBD5E1] flex-shrink rounded-md p-2 min-w-0 w-1/2 focus:outline-[#5DB1FF]"
+            value={amountType}
+            onChange={(e) => setAmountType(e.target.value)}>
+            <option value="kilogram">Kilogram</option>
+            <option value="liter">Liter</option>
+            <option value="ikat">Ikat</option>
+            <option value="satuan">Satuan</option>
+          </select>
           </div>
+        </div>
 
-          {/* Tanggal Masuk */}
-          <div className="flex flex-col">
-            <label htmlFor="startDate" className="text-xs font-semibold py-1">
-              Tanggal Masuk
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              placeholder={isClient ? undefined : "Loading..."}
-            />
-            {isClient && startDate && (
-              <span className="text-xs text-gray-500 mt-1">Tanggal: {new Date(startDate).toLocaleDateString("id-ID")}</span>
-            )}
-          </div>
+        {/* Tanggal Masuk */}
+        <div className="flex flex-col">
+          <label htmlFor="startDate" className="text-xs font-semibold py-1">
+          Tanggal Masuk
+          </label>
+          <input
+          type="date"
+          id="startDate"
+          className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          placeholder={isClient ? undefined : "Loading..."}
+          />
+          {isClient && startDate && (
+          <span className="text-xs text-gray-500 mt-1">Tanggal: {new Date(startDate).toLocaleDateString("id-ID")}</span>
+          )}
+        </div>
 
-          {/* Tanggal Kedaluwarsa */}
-          <div className="flex flex-col">
-            <label htmlFor="expDate" className="text-xs font-semibold py-1">
-              Tanggal Kedaluwarsa
-            </label>
-            <input
-              type="date"
-              id="expDate"
-              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              value={expDate}
-              onChange={(e) => setExpDate(e.target.value)}
-              placeholder={isClient ? undefined : "Loading..."}
-            />
-            {isClient && expDate && (
-              <span className="text-xs text-gray-500 mt-1">Kedaluwarsa: {new Date(expDate).toLocaleDateString("id-ID")}</span>
-            )}
-          </div>
+        {/* Tanggal Kedaluwarsa */}
+        <div className="flex flex-col">
+          <label htmlFor="expDate" className="text-xs font-semibold py-1">
+          Tanggal Kedaluwarsa
+          </label>
+          <input
+          type="date"
+          id="expDate"
+          className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+          value={expDate}
+          onChange={(e) => setExpDate(e.target.value)}
+          placeholder={isClient ? undefined : "Loading..."}
+          />
+          {isClient && expDate && (
+          <span className="text-xs text-gray-500 mt-1">Kedaluwarsa: {new Date(expDate).toLocaleDateString("id-ID")}</span>
+          )}
+        </div>
 
-          {/* Deskripsi */}
-          <div className="flex flex-col">
-            <label htmlFor="desc" className="text-xs font-semibold py-1">
-              Deskripsi
-            </label>
-            <input
-              type="text"
-              id="desc"
-              className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
-              placeholder="Masukkan deskripsi makanan"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-            />
-          </div>
+        {/* Deskripsi */}
+        <div className="flex flex-col">
+          <label htmlFor="desc" className="text-xs font-semibold py-1">
+          Deskripsi
+          </label>
+          <input
+          type="text"
+          id="desc"
+          className="text-xs ring-1 ring-[#CBD5E1] rounded-md p-2 focus:outline-[#5DB1FF]"
+          placeholder="Masukkan deskripsi makanan"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          />
+        </div>
         </div>
 
         {/* Submit */}
         <div className="w-full pt-10">
-          <button
-            disabled={isSubmitting}
-            type="submit"
-            className="text-xs text-center w-full py-2 bg-[#5DB1FF] rounded-md text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
-            Tambah
-          </button>
+        <button
+          disabled={isSubmitting}
+          type="submit"
+          className="text-xs text-center w-full py-2 bg-[#5DB1FF] rounded-md text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
+          Tambah
+        </button>
         </div>
       </form>
 
       {/* Scanner Popup */}
       {showScanner && (
         <FoodScanner
-          onImageResult={handleImageResult}
-          onBarcodeResult={handleBarcodeResult}
-          onReceiptResult={handleReceiptResult}
-          onClose={handleCloseScannerPopup}
+        onImageResult={handleImageResult}
+        onBarcodeResult={handleBarcodeResult}
+        onReceiptResult={handleReceiptResult}
+        onClose={handleCloseScannerPopup}
         />
       )}
 
@@ -390,6 +391,7 @@ const Page = () => {
         onContinue={handleContinueReceipt}
         onFinish={handleFinishReceipt}
       />
+      </div>
     </div>
   );
 };

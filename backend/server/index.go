@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -34,11 +35,16 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
 
+	geminiService, err := service.NewGeminiService()
+	if err != nil {
+		log.Fatalf("Failed to create Gemini service: %v", err)
+	}
+
 	// Routes
 	routes.AuthRoute(r, cfg)
 	routes.PredictionRoute(r, cfg)
 	routes.ProductRoute(r, cfg)
-	routes.ReceiptRoute(r, cfg)
+	routes.ReceiptRoute(r, geminiService)
 	routes.RecipeRoute(r, cfg)
 	routes.ItemRoute(r, cfg)
 	routes.CartRoute(r, cfg)
