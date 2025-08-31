@@ -1,114 +1,35 @@
 "use client";
 
 import { useRecipeStore } from "@/store/useRecipeStore";
-import { useRecipeTrackingStore } from "@/store/useRecipeTrackingStore";
 import { ChevronLeft } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { IngredientsAvailability } from "@/components/recipe/ingredients-availability";
+import { toast } from "sonner";
 
 const Page = () => {
   const router = useRouter();
-  const { recipeDetail } = useRecipeStore();
-  const { trackDetailPageEnter, trackDetailPageExit, trackCookingComplete, currentRecipe } = useRecipeTrackingStore();
-  const [hasTrackedEntry, setHasTrackedEntry] = useState(false);
-
-  // Track page entry
-  useEffect(() => {
-    if (recipeDetail && !hasTrackedEntry) {
-      const recipeData = {
-        id: recipeDetail.id || recipeDetail.slug,
-        title: recipeDetail.title,
-        slug: recipeDetail.slug,
-        cooking_time: recipeDetail.cooking_time,
-        calories: recipeDetail.calories || "0",
-        price: recipeDetail.price,
-        tags: recipeDetail.tags || [],
-      };
-
-      trackDetailPageEnter(recipeData);
-      setHasTrackedEntry(true);
-    }
-  }, [recipeDetail, trackDetailPageEnter, hasTrackedEntry]);
-
-  // Track page exit
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (currentRecipe) {
-        trackDetailPageExit();
-      }
-    };
-
-    const handleRouteChange = () => {
-      if (currentRecipe) {
-        trackDetailPageExit();
-      }
-    };
-
-    // navigates away or closes tab
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (...args) {
-      handleRouteChange();
-      return originalPushState.apply(this, args);
-    };
-
-    window.history.replaceState = function (...args) {
-      handleRouteChange();
-      return originalReplaceState.apply(this, args);
-    };
-
-    window.addEventListener("popstate", handleRouteChange);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("popstate", handleRouteChange);
-
-      // Restore original methods
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-
-      // Final cleanup
-      if (currentRecipe) {
-        trackDetailPageExit();
-      }
-    };
-  }, [trackDetailPageExit, currentRecipe]);
+  const { recipeDetail, setRecipeDetail } = useRecipeStore();
 
   const handleBack = () => {
-    trackDetailPageExit();
+    setRecipeDetail(null); // Clear detail view when going back
     router.back();
   };
 
   const handleCookingComplete = () => {
-    if (recipeDetail) {
-      const recipeData = {
-        id: recipeDetail.id || recipeDetail.slug,
-        title: recipeDetail.title,
-        slug: recipeDetail.slug,
-        cooking_time: recipeDetail.cooking_time,
-        calories: recipeDetail.calories || "0",
-        price: recipeDetail.price,
-        tags: recipeDetail.tags || [],
-      };
-
-      trackCookingComplete(recipeData);
-    }
+    toast.success(`Resep "${recipeDetail?.title}" ditandai telah dimasak!`)
   };
 
-  if (!recipeDetail)
+  if (!recipeDetail) {
     return (
-      <>
-        <div className="flex pt-6" onClick={handleBack}>
-          <ChevronLeft /> <span>Kembali</span>
+      <div className="max-w-2xl mx-auto p-4">
+        <div className="flex pt-6 cursor-pointer items-center text-gray-600 hover:text-black" onClick={() => router.push('/recipe')}>
+          <ChevronLeft /> <span>Kembali ke Daftar Resep</span>
         </div>
-        <p>No detail found</p>
-      </>
+        <p className="text-center mt-8">Detail resep tidak ditemukan. Silakan pilih resep dari daftar.</p>
+      </div>
     );
+  }
 
   const {
     title,
@@ -120,10 +41,10 @@ const Page = () => {
     serving_min,
     serving_max,
     description,
-    cover_url,
     ingredient_type,
     cooking_step,
-    share_link,
+    health_analysis,
+    nutrition,
   } = recipeDetail;
 
   const formatDate = (unix: number) =>
@@ -135,41 +56,63 @@ const Page = () => {
 
   return (
     <>
-      <div className="flex pt-6" onClick={handleBack}>
+      <div className="flex pt-6 cursor-pointer items-center text-gray-600 hover:text-black" onClick={handleBack}>
         <ChevronLeft /> <span>Kembali</span>
       </div>
       <div className="max-w-2xl mx-auto p-4 space-y-6">
-        <Image
-          src={`https://cdn.yummy.co.id/${cover_url}`}
-          width={600}
-          height={315}
-          alt={title}
-          className="w-full rounded-lg object-cover"
-        />
-
         <div>
-          <h1 className="text-xl font-bold">{title}</h1>
+          <h1 className="text-2xl font-bold">{title}</h1>
           <p className="text-sm text-gray-600">By {author.name}</p>
           <p className="text-xs text-gray-500">📅 {formatDate(release_date)}</p>
         </div>
 
-        <div className="text-sm text-gray-700 space-y-1">
-          <p>⭐ {rating} / 5</p>
-          <p>⏱️ {cooking_time} menit</p>
-          <p>
-            👨‍👩‍👧‍👦 {serving_min} - {serving_max} porsi
-          </p>
-          {price > 0 && <p>💰 {price / 1000}K</p>}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div className="bg-gray-100 p-3 rounded-lg">
+                <p className="font-bold text-lg">⭐ {rating.toFixed(1)}</p>
+                <p className="text-xs text-gray-600">Rating</p>
+            </div>
+            <div className="bg-gray-100 p-3 rounded-lg">
+                <p className="font-bold text-lg">⏱️ {cooking_time}</p>
+                <p className="text-xs text-gray-600">Menit</p>
+            </div>
+            <div className="bg-gray-100 p-3 rounded-lg">
+                <p className="font-bold text-lg">{serving_min}-{serving_max}</p>
+                <p className="text-xs text-gray-600">Porsi</p>
+            </div>
+            <div className="bg-gray-100 p-3 rounded-lg">
+                <p className="font-bold text-lg">{price > 0 ? `${price / 1000}K` : 'Gratis'}</p>
+                <p className="text-xs text-gray-600">Biaya</p>
+            </div>
         </div>
 
         <div>
-          <h2 className="text-md font-semibold mt-4">📌 Deskripsi</h2>
+          <h2 className="text-lg font-semibold mt-4">📌 Deskripsi</h2>
           <p className="text-sm text-gray-800 whitespace-pre-line">{description}</p>
         </div>
 
-        <div>
-          <h2 className="text-md font-semibold mt-4">🧂 Bahan-Bahan</h2>
+        {health_analysis && (
+          <div className="bg-sky-50 border-l-4 border-sky-500 p-4 rounded-r-lg">
+            <h2 className="text-lg font-semibold mb-2">💡 Analisis Kesehatan</h2>
+            <p className="text-sm text-gray-800">{health_analysis}</p>
+          </div>
+        )}
 
+        {nutrition && nutrition.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mt-4">📊 Informasi Gizi</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-center">
+              {nutrition.map((item, index) => (
+                <div key={index} className="bg-gray-100 p-3 rounded-lg">
+                  <p className="font-bold text-md">{item.amount}{item.unit}</p>
+                  <p className="text-xs text-gray-600">{item.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <h2 className="text-lg font-semibold mt-4">🧂 Bahan-Bahan</h2>
           {ingredient_type && ingredient_type.length > 0 ? (
             <IngredientsAvailability ingredientTypes={ingredient_type} recipeName={title || "Recipe"} />
           ) : (
@@ -180,22 +123,16 @@ const Page = () => {
         </div>
 
         <div>
-          <h2 className="text-md font-semibold mt-4">👨‍🍳 Cara Membuat</h2>
+          <h2 className="text-lg font-semibold mt-4">👨‍🍳 Cara Membuat</h2>
           <ol className="space-y-4 mt-2">
             {!!cooking_step &&
               cooking_step.map((step, i) => (
-                <li key={i} className="rounded p-4 shadow-md ring-1 ring-gray-200 max-w-sm">
-                  <p className="font-medium">{step.title}</p>
-                  <p className="text-sm text-gray-700">{step.text}</p>
-                  {step.image_url && (
-                    <Image
-                      src={`https://cdn.yummy.co.id/${step.image_url}`}
-                      alt={`Step ${step.order}`}
-                      width={300}
-                      height={300}
-                      className="mt-2 rounded object-cover"
-                    />
-                  )}
+                <li key={i} className="rounded-lg p-4 border border-gray-200 flex gap-4 items-start">
+                  <div className="bg-blue-500 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold">{step.order}</div>
+                  <div>
+                    <p className="font-medium">{step.title}</p>
+                    <p className="text-sm text-gray-700">{step.text}</p>
+                  </div>
                 </li>
               ))}
           </ol>
@@ -204,16 +141,11 @@ const Page = () => {
         <div className="flex space-x-4 mt-6">
           <button
             onClick={handleCookingComplete}
-            className="bg-green-500 text-white px-2 py-1 text-sm rounded-lg hover:bg-green-600 transition-colors shadow-md ring-1 ring-gray-200">
-            ✅ Klik Jika Sudah Dimasak
+            className="bg-green-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-green-600 transition-colors shadow-md ring-1 ring-gray-200">
+            ✅ Tandai Sudah Dimasak
           </button>
         </div>
 
-        <div className="mt-2">
-          <a href={share_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
-            🔗 Lebih Lengkap
-          </a>
-        </div>
       </div>
     </>
   );

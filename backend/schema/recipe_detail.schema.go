@@ -24,6 +24,12 @@ type IngredientType struct {
 	Ingredients []Ingredient `json:"ingredients"`
 }
 
+type NutritionInfo struct {
+	Name   string `json:"name"`
+	Amount string `json:"amount"`
+	Unit   string `json:"unit"`
+}
+
 type RecipeDetail struct {
 	ID              string           `json:"id"`
 	Title           string           `json:"title"`
@@ -31,6 +37,7 @@ type RecipeDetail struct {
 	CoverURL        string           `json:"cover_url"`
 	CoverWatermark  string           `json:"cover_url_watermark"`
 	Description     string           `json:"description"`
+	HealthAnalysis  string           `json:"health_analysis"`
 	Rating          float64          `json:"rating"`
 	VideoURL        string           `json:"video_url"`
 	Price           int              `json:"price"`
@@ -66,7 +73,7 @@ type RecipeDetail struct {
 	RecipeInfo      []any            `json:"recipe_info"`
 	Author          Author           `json:"author"`
 	IngredientType  []IngredientType `json:"ingredient_type"`
-	Nutrition       []any            `json:"nutrition"`
+	Nutrition       []NutritionInfo  `json:"nutrition"`
 	Recook          []any            `json:"recook"`
 	CookingTool     []any            `json:"cooking_tool"`
 	TipsAndTrick    []any            `json:"tips_and_trick"`

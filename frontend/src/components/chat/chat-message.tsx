@@ -2,7 +2,7 @@
 
 export default function ChatMessage({
   role,
-  content,
+  content, 
 }: {
   role: "user" | "assistant";
   content: string;

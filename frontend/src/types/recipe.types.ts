@@ -77,6 +77,12 @@ export interface Tag {
   slug: string;
 }
 
+export interface NutritionInfo {
+  name: string;
+  amount: string;
+  unit: string;
+}
+
 export interface RecipeDetail {
   id: string;
   title: string;
@@ -84,6 +90,7 @@ export interface RecipeDetail {
   cover_url: string;
   cover_url_watermark: string;
   description: string;
+  health_analysis: string;
   rating: number;
   video_url: string;
   price: number;
@@ -119,7 +126,7 @@ export interface RecipeDetail {
   recipe_info: any[];
   author: Author;
   ingredient_type: IngredientType[];
-  nutrition: any[];
+  nutrition: NutritionInfo[];
   recook: any[];
   cooking_tool: any[];
   tips_and_trick: any[];
