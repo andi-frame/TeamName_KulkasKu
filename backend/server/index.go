@@ -56,6 +56,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	recController := controller.NewRecommendationController(recService)
 	routes.RecommendationRoute(r, recController)
 
+	// Food Journal route setup
+	foodJournalRepository := repository.NewFoodJournalRepository(database.DB)
+	foodJournalService := service.NewFoodJournalService(foodJournalRepository, geminiService)
+	foodJournalController := controller.NewFoodJournalController(foodJournalService)
+	routes.FoodJournalRoutes(r, foodJournalController)
+
 	return r
 }
 
