@@ -44,7 +44,7 @@ func (s *GeminiService) PredictItem(file multipart.File, header *multipart.FileH
 			{
 				Parts: []geminiPart{
 					{
-						Text: createPrompt(),
+						Text: createItemPredictionPrompt(),
 					},
 					{
 						InlineData: &geminiInlineData{
@@ -188,8 +188,150 @@ func (s *GeminiService) AnalyzeText(prompt string) (string, error) {
 	return geminiResp.Candidates[0].Content.Parts[0].Text, nil
 }
 
-func createPrompt() string {
+func (s *GeminiService) AnalyzeFoodFromText(description string) (*schema.FoodAnalysis, error) {
+	prompt := createFoodAnalysisPrompt(description, "text")
+
+	response, err := s.GenerateContent(prompt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to analyze food text: %w", err)
+	}
+
+	var foodAnalysis schema.FoodAnalysis
+	if err := json.Unmarshal([]byte(response), &foodAnalysis); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal food analysis response: %w", err)
+	}
+
+	return &foodAnalysis, nil
+}
+
+func (s *GeminiService) AnalyzeFoodFromImage(file multipart.File, header *multipart.FileHeader) (*schema.FoodAnalysis, error) {
+	imgBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	imgBase64 := base64.StdEncoding.EncodeToString(imgBytes)
+	prompt := createFoodAnalysisPrompt("", "image")
+
+	reqBody := &geminiRequest{
+		Contents: []geminiContent{
+			{
+				Parts: []geminiPart{
+					{
+						Text: prompt,
+					},
+					{
+						InlineData: &geminiInlineData{
+							MimeType: header.Header.Get("Content-Type"),
+							Data:     imgBase64,
+						},
+					},
+				},
+			},
+		},
+		GenerationConfig: &geminiGenerationConfig{
+			ResponseMIMEType: "application/json",
+		},
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key="+s.apiKey, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to Gemini API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Gemini API returned non-200 status code: %d %s", resp.StatusCode, string(body))
+	}
+
+	var geminiResp geminiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+		return nil, fmt.Errorf("failed to decode Gemini API response: %w", err)
+	}
+
+	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("unexpected Gemini API response format")
+	}
+
+	responseText := geminiResp.Candidates[0].Content.Parts[0].Text
+	cleanedJSON := utils.CleanGeminiResponse(responseText)
+
+	var foodAnalysis schema.FoodAnalysis
+	if err := json.Unmarshal([]byte(cleanedJSON), &foodAnalysis); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal food analysis response: %w", err)
+	}
+
+	return &foodAnalysis, nil
+}
+
+func createItemPredictionPrompt() string {
 	return "Analisis gambar makanan ini dengan detail dan berikan respons dalam format JSON dengan struktur berikut:\n\n{\"item_name\": \"nama makanan/bahan makanan utama\",\"condition_description\": \"deskripsi kondisi makanan (segar, layu, busuk, dll)\",\"predicted_remaining_days\": angka hari (integer) prediksi daya tahan,\"reasoning\": \"penjelasan detail mengapa AI memberikan prediksi tersebut berdasarkan visual yang terlihat\",\"confidence\": nilai kepercayaan 0-1 (float)}\n\nPertimbangkan faktor-faktor berikut dalam analisis:\n- Warna dan tekstur makanan\n- Tanda-tanda kesegaran atau pembusukan\n- Jenis makanan dan daya tahan umumnya\n- Kondisi penyimpanan yang terlihat\n\nUntuk predicted_remaining_days, berikan estimasi berapa hari lagi makanan ini akan aman dikonsumsi.\nUntuk reasoning, berikan penjelasan yang mudah dipahami tentang mengapa prediksi tersebut diberikan.\n\nBerikan prediksi yang realistis dan konservatif untuk keamanan makanan.\nRespons harus dalam bahasa Indonesia untuk deskripsi dan reasoning."
+}
+
+func createFoodAnalysisPrompt(input string, inputType string) string {
+	basePrompt := `Analisis makanan dan berikan respons dalam format JSON dengan struktur berikut:
+
+{
+  "detected_foods": [
+    {
+      "name": "nama makanan",
+      "portion": "ukuran porsi (contoh: 1 porsi, 100 gram, 1 buah sedang)",
+      "weight": angka berat dalam gram (float),
+      "nutrition": {
+        "calories": angka kalori (float),
+        "protein": angka protein dalam gram (float),
+        "carbs": angka karbohidrat dalam gram (float),
+        "fat": angka lemak dalam gram (float),
+        "sugar": angka gula dalam gram (float),
+        "fiber": angka serat dalam gram (float),
+        "sodium": angka sodium dalam mg (float),
+        "confidence": tingkat kepercayaan 0-1 (float)
+      },
+      "description": "deskripsi detail makanan dan cara penyajiannya"
+    }
+  ],
+  "total_nutrition": {
+    "calories": total kalori dari semua makanan (float),
+    "protein": total protein dalam gram (float),
+    "carbs": total karbohidrat dalam gram (float),
+    "fat": total lemak dalam gram (float),
+    "sugar": total gula dalam gram (float),
+    "fiber": total serat dalam gram (float),
+    "sodium": total sodium dalam mg (float),
+    "confidence": rata-rata kepercayaan 0-1 (float)
+  },
+  "analysis_text": "rangkuman analisis dan insight nutrisi",
+  "confidence": tingkat kepercayaan keseluruhan 0-1 (float)
+}
+
+Petunjuk analisis:
+- Identifikasi semua makanan yang disebutkan/terlihat
+- Berikan takaran normal untuk satu porsi jika tidak disebutkan spesifik
+- Hitung nilai gizi berdasarkan database nutrisi standar
+- Untuk input text yang tidak spesifik takaran, gunakan ukuran porsi normal
+- Berikan analisis yang realistis dan akurat
+- Semua deskripsi dalam bahasa Indonesia`
+
+	switch inputType {
+	case "text":
+		return fmt.Sprintf("%s\n\nDeskripsi makanan: %s", basePrompt, input)
+	case "image":
+		return fmt.Sprintf("%s\n\nAnalisis gambar makanan yang diberikan.", basePrompt)
+	default:
+		return fmt.Sprintf("%s\n\nInput: %s", basePrompt, input)
+	}
 }
 
 type geminiGenerationConfig struct {
