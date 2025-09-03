@@ -139,6 +139,13 @@ func CreateNewFoodJournal(input FoodJournalInput) error {
 	if foodAnalysis != nil {
 		foodJournal.AINutrition = foodAnalysis.TotalNutrition
 		foodJournal.AIFeedback = foodAnalysis.AnalysisText
+
+		recommendations, err := geminiService.GenerateRecommendations(foodAnalysis, input.MealType, input.FeelingBefore, input.FeelingAfter)
+		if err != nil {
+			fmt.Printf("Warning: failed to generate recommendations: %v\n", err)
+		} else {
+			foodJournal.AIRecommendations = *recommendations
+		}
 	}
 
 	return repository.CreateNewFoodJournal(foodJournal, input.UserID.String())

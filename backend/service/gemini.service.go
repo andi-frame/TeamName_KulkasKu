@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/schema"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/utils"
@@ -195,10 +196,11 @@ func (s *GeminiService) AnalyzeFoodFromText(description string) (*schema.FoodAna
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze food text: %w", err)
 	}
+	cleanedJSON := utils.CleanGeminiResponse(response)
 
 	var foodAnalysis schema.FoodAnalysis
-	if err := json.Unmarshal([]byte(response), &foodAnalysis); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal food analysis response: %w", err)
+	if err := json.Unmarshal([]byte(cleanedJSON), &foodAnalysis); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal food analysis response: %w\nRaw response: %s\nCleaned: %s", err, response, cleanedJSON)
 	}
 
 	return &foodAnalysis, nil
@@ -276,12 +278,30 @@ func (s *GeminiService) AnalyzeFoodFromImage(file multipart.File, header *multip
 	return &foodAnalysis, nil
 }
 
+func (s *GeminiService) GenerateRecommendations(foodAnalysis *schema.FoodAnalysis, mealType string, feelingBefore string, feelingAfter string) (*schema.AIRecommendations, error) {
+	prompt := createRecommendationPrompt(foodAnalysis, mealType, feelingBefore, feelingAfter)
+
+	response, err := s.GenerateContent(prompt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate recommendations: %w", err)
+	}
+
+	cleanedJSON := utils.CleanGeminiResponse(response)
+
+	var recommendations schema.AIRecommendations
+	if err := json.Unmarshal([]byte(cleanedJSON), &recommendations); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal recommendations response: %w", err)
+	}
+
+	return &recommendations, nil
+}
+
 func createItemPredictionPrompt() string {
 	return "Analisis gambar makanan ini dengan detail dan berikan respons dalam format JSON dengan struktur berikut:\n\n{\"item_name\": \"nama makanan/bahan makanan utama\",\"condition_description\": \"deskripsi kondisi makanan (segar, layu, busuk, dll)\",\"predicted_remaining_days\": angka hari (integer) prediksi daya tahan,\"reasoning\": \"penjelasan detail mengapa AI memberikan prediksi tersebut berdasarkan visual yang terlihat\",\"confidence\": nilai kepercayaan 0-1 (float)}\n\nPertimbangkan faktor-faktor berikut dalam analisis:\n- Warna dan tekstur makanan\n- Tanda-tanda kesegaran atau pembusukan\n- Jenis makanan dan daya tahan umumnya\n- Kondisi penyimpanan yang terlihat\n\nUntuk predicted_remaining_days, berikan estimasi berapa hari lagi makanan ini akan aman dikonsumsi.\nUntuk reasoning, berikan penjelasan yang mudah dipahami tentang mengapa prediksi tersebut diberikan.\n\nBerikan prediksi yang realistis dan konservatif untuk keamanan makanan.\nRespons harus dalam bahasa Indonesia untuk deskripsi dan reasoning."
 }
 
 func createFoodAnalysisPrompt(input string, inputType string) string {
-	basePrompt := `Analisis makanan dan berikan respons dalam format JSON dengan struktur berikut:
+	basePrompt := `Analisis makanan dan berikan respons dalam format JSON yang valid dengan struktur berikut:
 
 {
   "detected_foods": [
@@ -316,13 +336,19 @@ func createFoodAnalysisPrompt(input string, inputType string) string {
   "confidence": tingkat kepercayaan keseluruhan 0-1 (float)
 }
 
+PENTING: 
+- Pastikan response adalah JSON yang valid
+- Tidak ada koma tambahan di akhir array atau object
+- Semua field wajib diisi dengan nilai yang sesuai
+- Gunakan float untuk semua nilai numerik
+- Deskripsi dalam bahasa Indonesia yang natural
+
 Petunjuk analisis:
 - Identifikasi semua makanan yang disebutkan/terlihat
 - Berikan takaran normal untuk satu porsi jika tidak disebutkan spesifik
 - Hitung nilai gizi berdasarkan database nutrisi standar
 - Untuk input text yang tidak spesifik takaran, gunakan ukuran porsi normal
-- Berikan analisis yang realistis dan akurat
-- Semua deskripsi dalam bahasa Indonesia`
+- Berikan analisis yang realistis dan akurat`
 
 	switch inputType {
 	case "text":
@@ -332,6 +358,79 @@ Petunjuk analisis:
 	default:
 		return fmt.Sprintf("%s\n\nInput: %s", basePrompt, input)
 	}
+}
+
+func createRecommendationPrompt(foodAnalysis *schema.FoodAnalysis, mealType string, feelingBefore string, feelingAfter string) string {
+	var nutritionInfo string
+	var foodInfo string
+
+	if foodAnalysis != nil {
+		nutritionInfo = fmt.Sprintf(`
+Informasi Nutrisi Makanan:
+- Kalori: %.1f kcal
+- Protein: %.1f gram
+- Karbohidrat: %.1f gram
+- Lemak: %.1f gram
+- Gula: %.1f gram
+- Serat: %.1f gram
+- Sodium: %.1f mg`,
+			foodAnalysis.TotalNutrition.Calories,
+			foodAnalysis.TotalNutrition.Protein,
+			foodAnalysis.TotalNutrition.Carbs,
+			foodAnalysis.TotalNutrition.Fat,
+			foodAnalysis.TotalNutrition.Sugar,
+			foodAnalysis.TotalNutrition.Fiber,
+			foodAnalysis.TotalNutrition.Sodium,
+		)
+
+		var foods []string
+		for _, food := range foodAnalysis.DetectedFoods {
+			foods = append(foods, fmt.Sprintf("%s (%s)", food.Name, food.Portion))
+		}
+		foodInfo = fmt.Sprintf("Makanan yang dikonsumsi: %s", strings.Join(foods, ", "))
+	}
+
+	prompt := fmt.Sprintf(`Berdasarkan data konsumsi makanan berikut, berikan rekomendasi personal dalam format JSON:
+
+%s
+%s
+
+Konteks Tambahan:
+- Jenis makanan: %s
+- Perasaan sebelum makan: %s
+- Perasaan setelah makan: %s
+
+Berikan respons dalam format JSON dengan struktur berikut:
+{
+  "next_meal_suggestion": "saran makanan untuk makan selanjutnya yang melengkapi nutrisi yang sudah dikonsumsi",
+  "nutrition_tips": "tips nutrisi berdasarkan pola makan saat ini",
+  "motivational_message": "pesan motivasi yang personal dan mendukung"
+}
+
+Panduan untuk setiap field:
+1. next_meal_suggestion: Rekomendasikan makanan yang dapat melengkapi nutrisi yang kurang atau menyeimbangkan yang berlebih. Pertimbangkan waktu makan (sarapan/makan siang/makan malam) dan kebutuhan nutrisi harian.
+
+2. nutrition_tips: Berikan tips praktis tentang:
+   - Keseimbangan nutrisi berdasarkan konsumsi saat ini
+   - Saran waktu makan yang tepat
+   - Tips untuk meningkatkan kualitas nutrisi
+   - Peringatan jika ada nutrisi yang berlebihan
+
+3. motivational_message: Berikan motivasi yang:
+   - Mengapresiasi kebiasaan baik yang sudah dilakukan
+   - Memberikan semangat untuk terus menjaga pola makan sehat
+   - Personal berdasarkan perasaan sebelum dan sesudah makan
+   - Positif dan mendukung perjalanan kesehatan
+
+Semua respons harus dalam bahasa Indonesia yang ramah dan mudah dipahami. Buat saran yang realistis dan dapat diterapkan dalam kehidupan sehari-hari.`,
+		foodInfo,
+		nutritionInfo,
+		mealType,
+		feelingBefore,
+		feelingAfter,
+	)
+
+	return prompt
 }
 
 type geminiGenerationConfig struct {
