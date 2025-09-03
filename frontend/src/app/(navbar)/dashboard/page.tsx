@@ -46,6 +46,12 @@ export default function Dashboard() {
   const router = useRouter();
   const { setRecipeDetail } = useRecipeStore();
 
+  // Statistics state
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [mealsToday, setMealsToday] = useState<number>(0);
+  const [itemsExpiring, setItemsExpiring] = useState<number>(0);
+//   const [goalAchievement, setGoalAchievement] = useState<number>(0); // in percentage
+
   useEffect(() => {
     const handleRecipeOnClick = () => {
       setRecipeDetail(recipe);
@@ -95,6 +101,8 @@ export default function Dashboard() {
               },
             })
           );
+           
+          setMealsToday(formattedMeals.length);
           setRecentMeals(formattedMeals);
         }
 
@@ -131,6 +139,8 @@ export default function Dashboard() {
         const items = response1.data.data || [];
         items.push(...(response2.data.data || []));
 
+        setTotalItems(items.length);
+
         const now = new Date();
         const filtered = items.filter((item: Item) => {
           const expDate = new Date(item.ExpDate);
@@ -138,6 +148,8 @@ export default function Dashboard() {
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           return diffDays <= 7;
         });
+
+        setItemsExpiring(filtered.length);
 
         setExpiringItems(filtered);
       } catch (error) {
@@ -308,19 +320,19 @@ export default function Dashboard() {
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">24</p>
+              <p className="text-2xl font-bold text-blue-600">{totalItems}</p>
               <p className="text-sm text-gray-600">Items in Fridge</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">18</p>
-              <p className="text-sm text-gray-600">Meals This Week</p>
+              <p className="text-2xl font-bold text-green-600">{mealsToday}</p>
+              <p className="text-sm text-gray-600">Meals Today</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-yellow-600">3</p>
+              <p className="text-2xl font-bold text-yellow-600">{itemsExpiring}</p>
               <p className="text-sm text-gray-600">Items Expiring</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">92%</p>
+              <p className="text-2xl font-bold text-purple-600">{92}%</p>
               <p className="text-sm text-gray-600">Goal Achievement</p>
             </div>
           </div>
