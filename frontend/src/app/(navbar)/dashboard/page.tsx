@@ -119,11 +119,41 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  const expiringItems = [
-    { id: "1", name: "Milk", expiryDate: "2025-01-15", daysLeft: 2 },
-    { id: "2", name: "Chicken Breast", expiryDate: "2025-01-16", daysLeft: 3 },
-    { id: "3", name: "Yogurt", expiryDate: "2025-01-14", daysLeft: 1 },
-  ];
+  // Expiring items
+  const [expiringItems, setExpiringItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    const checkExpiringItems = async () => {
+      try {
+        const response1 = await api.get("/item/fresh");
+        const response2 = await api.get("/item/expired");
+
+        const items = response1.data.data || [];
+        items.push(...(response2.data.data || []));
+
+        const now = new Date();
+        const filtered = items.filter((item: Item) => {
+          const expDate = new Date(item.ExpDate);
+          const diffTime = expDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        });
+
+        setExpiringItems(filtered);
+      } catch (error) {
+        console.error("Error fetching expiring items:", error);
+        setExpiringItems([]);
+      }
+    };
+
+    checkExpiringItems();
+  }, []);
+
+  //   setExpiringItems([
+  //     { ID: "1", name: "Milk", expiryDate: "2025-01-15", daysLeft: 2 },
+  //     { ID: "2", name: "Chicken Breast", expiryDate: "2025-01-16", daysLeft: 3 },
+  //     { id: "3", name: "Yogurt", expiryDate: "2025-01-14", daysLeft: 1 },
+  //   ]);
 
   const nutritionTargets = {
     protein: 50, // 50g
@@ -248,20 +278,29 @@ export default function Dashboard() {
                 <h2 className="text-xl font-semibold">Items Expiring Soon</h2>
               </div>
               <div className="space-y-3">
-                {expiringItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.expiryDate}</p>
+                {expiringItems.map((item) => {
+                  const start = new Date(item.StartDate);
+                  const exp = new Date(item.ExpDate);
+
+                  // difference in days
+                  const diffTime = exp.getTime() - start.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  return (
+                    <div key={item.ID} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.Name}</p>
+                        <p className="text-sm text-gray-600">{item.ExpDate}</p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          diffDays <= 1 ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                        {diffDays} day{diffDays !== 1 ? "s" : ""}
+                      </span>
                     </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.daysLeft <= 1 ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                      {item.daysLeft} day{item.daysLeft !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
