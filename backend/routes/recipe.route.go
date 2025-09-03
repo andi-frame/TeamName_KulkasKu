@@ -10,5 +10,5 @@ func RecipeRoute(r *gin.Engine, recipeController *controller.RecipeController) {
 	recipeRoutes := r.Group("/recipe")
 	recipeRoutes.Use(middleware.JWTMiddleware())
 
-	recipeRoutes.GET("/all", recipeController.GenerateRecipesHandler)
+	recipeRoutes.GET("/all", recipeController.GetRecipesHandler)
 }

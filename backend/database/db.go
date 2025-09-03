@@ -32,6 +32,7 @@ func Init() {
 		&schema.Cart{},
 		&schema.CartItem{},
 		&schema.FoodJournal{},
+		&schema.GeneratedRecipe{},
 	); err != nil {
 		log.Println("AutoMigrate warning:", err)
 	}

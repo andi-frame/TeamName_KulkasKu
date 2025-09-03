@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/andi-frame/TeamName_KulkasKu/backend/middleware"
+	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ func NewRecipeController(recipeService *service.RecipeService) *RecipeController
 	}
 }
 
-func (rc *RecipeController) GenerateRecipesHandler(c *gin.Context) {
+func (rc *RecipeController) GetRecipesHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -33,9 +34,9 @@ func (rc *RecipeController) GenerateRecipesHandler(c *gin.Context) {
 		return
 	}
 
-	recipes, err := rc.recipeService.GenerateRecipes(userID)
+	recipes, err := repository.GetGeneratedRecipesByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve recipes: " + err.Error()})
 		return
 	}
 

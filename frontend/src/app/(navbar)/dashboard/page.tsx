@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, Clock, AlertTriangle } from "lucide-react";
+import { BarChart3, Clock, AlertTriangle, ChefHat, Star, Users } from "lucide-react";
 
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -10,17 +10,16 @@ import { FoodCard } from "@/components/food-card";
 import { Item } from "@/types/item.types";
 import api from "@/utils/axios";
 
+import { useRecipeStore } from "@/store/useRecipeStore";
+import { useRouter } from "next/navigation";
+import { RecipeDetail } from "@/types/recipe.types";
+
 interface NutritionData {
   protein: number;
   calories: number;
   fat: number;
   carbs: number;
   sugar: number;
-}
-
-interface SuggestedMenu {
-  menu: string;
-  reason: string;
 }
 
 interface RecentMeal {
@@ -41,7 +40,29 @@ export default function Dashboard() {
 
   const [ingredients, setIngredients] = useState<Item[]>([]);
   const [recentMeals, setRecentMeals] = useState<RecentMeal[]>([]);
-  const [suggestedMenus, setSuggestedMenus] = useState<SuggestedMenu[]>([]);
+  const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeDetail[]>([]);
+  const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
+
+  const router = useRouter();
+  const { setRecipeDetail } = useRecipeStore();
+
+  // Statistics state
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [mealsToday, setMealsToday] = useState<number>(0);
+  const [itemsExpiring, setItemsExpiring] = useState<number>(0);
+//   const [goalAchievement, setGoalAchievement] = useState<number>(0); // in percentage
+
+  useEffect(() => {
+    const handleRecipeOnClick = () => {
+      setRecipeDetail(recipe);
+      router.push("/recipe/detail");
+    };
+
+    if (recipe) {
+      handleRecipeOnClick();
+    }
+  }, [recipe, router, setRecipeDetail]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -80,12 +101,14 @@ export default function Dashboard() {
               },
             })
           );
+           
+          setMealsToday(formattedMeals.length);
           setRecentMeals(formattedMeals);
         }
 
-        // Update suggested menus
-        if (dashboardData.next_meal_suggestions) {
-          setSuggestedMenus(dashboardData.next_meal_suggestions);
+        // Update suggested recipes
+        if (dashboardData.next_meal_suggestions && Array.isArray(dashboardData.next_meal_suggestions)) {
+          setSuggestedRecipes(dashboardData.next_meal_suggestions);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -97,22 +120,52 @@ export default function Dashboard() {
           carbs: 225,
           sugar: 38,
         });
-        setSuggestedMenus([
-          { menu: "Chicken Stir Fry with Vegetables", reason: "High protein and vitamins from vegetables" },
-          { menu: "Greek Yogurt Parfait", reason: "Good source of protein and probiotics" },
-          { menu: "Quinoa Buddha Bowl", reason: "Complete protein and fiber from quinoa" },
-        ]);
+        setSuggestedRecipes([]);
       }
     };
 
     fetchDashboardData();
   }, []);
 
-  const expiringItems = [
-    { id: "1", name: "Milk", expiryDate: "2025-01-15", daysLeft: 2 },
-    { id: "2", name: "Chicken Breast", expiryDate: "2025-01-16", daysLeft: 3 },
-    { id: "3", name: "Yogurt", expiryDate: "2025-01-14", daysLeft: 1 },
-  ];
+  // Expiring items
+  const [expiringItems, setExpiringItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    const checkExpiringItems = async () => {
+      try {
+        const response1 = await api.get("/item/fresh");
+        const response2 = await api.get("/item/expired");
+
+        const items = response1.data.data || [];
+        items.push(...(response2.data.data || []));
+
+        setTotalItems(items.length);
+
+        const now = new Date();
+        const filtered = items.filter((item: Item) => {
+          const expDate = new Date(item.ExpDate);
+          const diffTime = expDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        });
+
+        setItemsExpiring(filtered.length);
+
+        setExpiringItems(filtered);
+      } catch (error) {
+        console.error("Error fetching expiring items:", error);
+        setExpiringItems([]);
+      }
+    };
+
+    checkExpiringItems();
+  }, []);
+
+  //   setExpiringItems([
+  //     { ID: "1", name: "Milk", expiryDate: "2025-01-15", daysLeft: 2 },
+  //     { ID: "2", name: "Chicken Breast", expiryDate: "2025-01-16", daysLeft: 3 },
+  //     { id: "3", name: "Yogurt", expiryDate: "2025-01-14", daysLeft: 1 },
+  //   ]);
 
   const nutritionTargets = {
     protein: 50, // 50g
@@ -135,6 +188,19 @@ export default function Dashboard() {
   };
 
   const [isIngredientsPanelOpen, setIsIngredientsPanelOpen] = useState<boolean>(false);
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const getCaloriesFromNutrition = (nutrition: RecipeDetail["nutrition"]) => {
+    const calorieInfo = nutrition.find((n) => n.name.toLowerCase().includes("kalori"));
+    return calorieInfo ? calorieInfo.amount : "N/A";
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -224,20 +290,29 @@ export default function Dashboard() {
                 <h2 className="text-xl font-semibold">Items Expiring Soon</h2>
               </div>
               <div className="space-y-3">
-                {expiringItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.expiryDate}</p>
+                {expiringItems.map((item) => {
+                  const start = new Date(item.StartDate);
+                  const exp = new Date(item.ExpDate);
+
+                  // difference in days
+                  const diffTime = exp.getTime() - start.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  return (
+                    <div key={item.ID} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.Name}</p>
+                        <p className="text-sm text-gray-600">{item.ExpDate}</p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          diffDays <= 1 ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                        {diffDays} day{diffDays !== 1 ? "s" : ""}
+                      </span>
                     </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.daysLeft <= 1 ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                      {item.daysLeft} day{item.daysLeft !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -245,19 +320,19 @@ export default function Dashboard() {
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">24</p>
+              <p className="text-2xl font-bold text-blue-600">{totalItems}</p>
               <p className="text-sm text-gray-600">Items in Fridge</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">18</p>
-              <p className="text-sm text-gray-600">Meals This Week</p>
+              <p className="text-2xl font-bold text-green-600">{mealsToday}</p>
+              <p className="text-sm text-gray-600">Meals Today</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-yellow-600">3</p>
+              <p className="text-2xl font-bold text-yellow-600">{itemsExpiring}</p>
               <p className="text-sm text-gray-600">Items Expiring</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">92%</p>
+              <p className="text-2xl font-bold text-purple-600">{92}%</p>
               <p className="text-sm text-gray-600">Goal Achievement</p>
             </div>
           </div>
@@ -285,16 +360,74 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Suggested Menus */}
+            {/* Suggested Recipes */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Suggested Menus</h2>
-              <div className="space-y-3">
-                {suggestedMenus.map((suggestion, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                    <p className="font-medium text-gray-900">{suggestion.menu}</p>
-                    <p className="text-sm text-gray-600">{suggestion.reason}</p>
+              <div className="flex items-center space-x-2 mb-4">
+                <ChefHat className="h-5 w-5 text-green-500" />
+                <h2 className="text-xl font-semibold">Suggested Recipes</h2>
+              </div>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {suggestedRecipes && suggestedRecipes.length > 0 ? (
+                  suggestedRecipes.map((recipe) => (
+                    <div
+                      key={recipe.id}
+                      onClick={() => {
+                        setRecipe(recipe);
+                      }}
+                      className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-900 text-lg leading-tight">{recipe.title}</h3>
+                        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          <span className="text-sm font-medium text-gray-700">{recipe.rating}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{recipe.description}</p>
+
+                      {recipe.health_analysis && (
+                        <div className="mb-3 p-2 bg-green-100 rounded-md">
+                          <p className="text-xs text-green-800 font-medium">Health Benefit:</p>
+                          <p className="text-xs text-green-700">{recipe.health_analysis}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {recipe.tags &&
+                          recipe.tags.slice(0, 3).map((tag, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                              {tag.name}
+                            </span>
+                          ))}
+                      </div>
+
+                      <div className="flex justify-between items-center text-sm text-gray-600">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{recipe.cooking_time} min</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Users className="h-4 w-4" />
+                            <span>
+                              {recipe.serving_min}-{recipe.serving_max}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600">{formatPrice(recipe.price)}</div>
+                          <div className="text-xs">{getCaloriesFromNutrition(recipe.nutrition)} kcal</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <ChefHat className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No recipe suggestions available</p>
+                    <p className="text-sm text-gray-400">Try adding more ingredients to get personalized recommendations</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
