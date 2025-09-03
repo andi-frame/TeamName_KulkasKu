@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Clock, Brain, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Clock, Heart, ChevronLeft, Eye, Brain } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import FoodJournalForm from "@/components/food-journal/food-journal-form";
-import { FoodJournal } from "@/types/food-journal.types";
 import api from "@/utils/axios";
+import { FoodJournal } from "@/types/food-journal.types";
+import { formatDate, calculateNutrition, handleApiError } from "@/utils/food-journal.utils";
+import FoodJournalForm from "@/components/food-journal/food-journal-form";
 
 const FoodJournalPage = () => {
   const [foodJournals, setFoodJournals] = useState<FoodJournal[]>([]);
@@ -17,74 +18,37 @@ const FoodJournalPage = () => {
     protein: 0,
     carbs: 0,
     fat: 0,
+    sugar: 0,
   });
 
-  const fetchTodayFoodJournals = async () => {
+  const loadFoodJournals = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/food-journal/today");
-      setFoodJournals(response.data.data || []);
+      const journals = response.data.data || [];
+      setFoodJournals(journals);
 
-      // Calculate today's nutrition
-      const nutrition = response.data.data?.reduce(
-        (acc: typeof todayNutrition, journal: FoodJournal) => ({
-          calories: acc.calories + (journal.AINutrition?.Calories || 0),
-          protein: acc.protein + (journal.AINutrition?.Protein || 0),
-          carbs: acc.carbs + (journal.AINutrition?.Carbs || 0),
-          fat: acc.fat + (journal.AINutrition?.Fat || 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-      );
-
-      setTodayNutrition(nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      // Calculate nutrition using utility function
+      const nutrition = calculateNutrition(journals);
+      setTodayNutrition(nutrition);
     } catch (error) {
-      console.error("Error fetching food journals:", error);
-      toast.error("Gagal memuat data jurnal makanan");
+      handleApiError(error, "Gagal memuat data jurnal makanan");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const response = await api.get("/food-journal/today");
-        setFoodJournals(response.data.data || []);
-
-        // Calculate today's nutrition
-        const nutrition = response.data.data?.reduce(
-          (acc: typeof todayNutrition, journal: FoodJournal) => ({
-            calories: acc.calories + (journal.AINutrition?.Calories || 0),
-            protein: acc.protein + (journal.AINutrition?.Protein || 0),
-            carbs: acc.carbs + (journal.AINutrition?.Carbs || 0),
-            fat: acc.fat + (journal.AINutrition?.Fat || 0),
-          }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 }
-        );
-
-        setTodayNutrition(nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0 });
-      } catch (error) {
-        console.error("Error fetching food journals:", error);
-        toast.error("Gagal memuat data jurnal makanan");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    loadFoodJournals();
   }, []);
 
   const handleFoodJournalCreated = () => {
-    fetchTodayFoodJournals();
+    loadFoodJournals();
     setShowForm(false);
     toast.success("Jurnal makanan berhasil ditambahkan!");
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatTime = formatDate;
 
   if (loading) {
     return (
@@ -123,7 +87,7 @@ const FoodJournalPage = () => {
             <Brain className="h-5 w-5 text-blue-500 mr-2" />
             Nutrisi Hari Ini
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4 mb-2">
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-500">{Math.round(todayNutrition.calories)}</div>
               <div className="text-sm text-gray-600">Kalori</div>
@@ -134,11 +98,17 @@ const FoodJournalPage = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-500">{Math.round(todayNutrition.carbs)}g</div>
-              <div className="text-sm text-gray-600">Karbohidrat</div>
+              <div className="text-sm text-gray-600">Karbo</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-xl font-bold text-green-500">{Math.round(todayNutrition.fat)}g</div>
+              <div className="text-sm text-gray-600">Lemak</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">{Math.round(todayNutrition.fat)}g</div>
-              <div className="text-sm text-gray-600">Lemak</div>
+              <div className="text-xl font-bold text-pink-500">{Math.round(todayNutrition.sugar)}g</div>
+              <div className="text-sm text-gray-600">Gula</div>
             </div>
           </div>
         </div>
@@ -174,52 +144,58 @@ const FoodJournalPage = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {foodJournals.map((journal) => (
-                <div key={journal.ID} className="p-6">
+              {foodJournals.map((journal, index) => (
+                <div key={journal.id || `journal-${index}`} className="p-6">
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{journal.MealName}</h3>
-                      <p className="text-sm text-gray-600 capitalize">{journal.MealType}</p>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{journal.meal_name}</h3>
+                      <p className="text-sm text-gray-600 capitalize">{journal.meal_type}</p>
                     </div>
-                    <span className="text-sm text-gray-500">{formatTime(journal.CreatedAt)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">{formatTime(journal.created_at)}</span>
+                      <Link
+                        href={`/add-food/${journal.id}`}
+                        className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
+                        title="Lihat Detail">
+                        <Eye size={16} />
+                      </Link>
+                    </div>
                   </div>
 
-                  {journal.Description && <p className="text-gray-700 mb-3 text-sm">{journal.Description}</p>}
+                  {journal.description && <p className="text-gray-700 mb-3 text-sm">{journal.description}</p>}
 
-                  {journal.AINutrition && (
-                    <div className="grid grid-cols-4 gap-2 text-xs bg-gray-50 rounded-lg p-3">
-                      <div className="text-center">
-                        <div className="font-semibold text-orange-600">{Math.round(journal.AINutrition.Calories)}</div>
-                        <div className="text-gray-600">kcal</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-red-600">{Math.round(journal.AINutrition.Protein)}g</div>
-                        <div className="text-gray-600">protein</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-blue-600">{Math.round(journal.AINutrition.Carbs)}g</div>
-                        <div className="text-gray-600">karbo</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-green-600">{Math.round(journal.AINutrition.Fat)}g</div>
-                        <div className="text-gray-600">lemak</div>
+                  {journal.ai_nutrition && (
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                      <h4 className="font-semibold text-gray-800 mb-2 text-sm">📊 Nutrition Facts</h4>
+                      <div className="grid grid-cols-5 gap-2 text-xs">
+                        <div className="text-center">
+                          <div className="font-semibold text-orange-600">{Math.round(journal.ai_nutrition.calories)}</div>
+                          <div className="text-gray-600">kcal</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold text-red-600">{Math.round(journal.ai_nutrition.protein)}g</div>
+                          <div className="text-gray-600">protein</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold text-blue-600">{Math.round(journal.ai_nutrition.carbs)}g</div>
+                          <div className="text-gray-600">karbo</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold text-green-600">{Math.round(journal.ai_nutrition.fat)}g</div>
+                          <div className="text-gray-600">lemak</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold text-pink-600">{Math.round(journal.ai_nutrition.sugar)}g</div>
+                          <div className="text-gray-600">gula</div>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {journal.AIFeedback && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-start">
-                        <Brain className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
-                        <p className="text-sm text-blue-800">{journal.AIFeedback}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {journal.AIRecommendations?.NextMealSuggestion && (
-                    <div className="mt-2 p-3 bg-green-50 rounded-lg">
+                  {journal.ai_recommendations?.next_meal_suggestion && (
+                    <div className="p-3 bg-green-50 rounded-lg">
                       <p className="text-sm text-green-800">
-                        💡 <strong>Saran:</strong> {journal.AIRecommendations.NextMealSuggestion}
+                        💡 <strong>Saran:</strong> {journal.ai_recommendations.next_meal_suggestion}
                       </p>
                     </div>
                   )}
@@ -234,8 +210,9 @@ const FoodJournalPage = () => {
           <h4 className="font-semibold text-yellow-800 mb-2">💡 Tips Jurnal Makanan:</h4>
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>• Catat makanan segera setelah makan untuk akurasi yang lebih baik</li>
-            <li>• Gunakan fitur suara untuk input yang lebih cepat</li>
+            <li>• Gunakan fitur suara untuk input deskripsi yang lebih cepat</li>
             <li>• Sertakan perasaan Anda untuk analisis yang lebih personal</li>
+            <li>• AI akan menganalisis makanan dan memberikan insight nutrisi</li>
           </ul>
         </div>
       </div>

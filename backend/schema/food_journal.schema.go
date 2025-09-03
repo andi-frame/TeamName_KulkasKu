@@ -14,27 +14,44 @@ type FoodJournal struct {
 	UserID            uuid.UUID         `json:"user_id" gorm:"not null"`
 	User              User              `json:"user" gorm:"foreignKey:UserID"`
 	MealName          string            `json:"meal_name" gorm:"not null"`
-	MealType          string            `json:"meal_type"` // breakfast, lunch, dinner, snack
+	MealType          string            `json:"meal_type"`
 	Description       string            `json:"description"`
-	FeelingBefore     string            `json:"feeling_before"` // hungry, very_hungry, normal
-	FeelingAfter      string            `json:"feeling_after"`  // full, satisfied, still_hungry
+	FeelingBefore     string            `json:"feeling_before"`
+	FeelingAfter      string            `json:"feeling_after"`
+	InputType         string            `json:"input_type"`
+	RawInput          string            `json:"raw_input"`
+	ProcessedInput    string            `json:"processed_input"`
 	ImageURL          string            `json:"image_url"`
-	VoiceURL          string            `json:"voice_url"`
-	TranscriptText    string            `json:"transcript_text"`
 	AINutrition       AINutrition       `json:"ai_nutrition" gorm:"embedded;embeddedPrefix:ai_"`
 	AIFeedback        string            `json:"ai_feedback"`
 	AIRecommendations AIRecommendations `json:"ai_recommendations" gorm:"embedded;embeddedPrefix:rec_"`
+	FoodAnalysis      string            `json:"food_analysis" gorm:"type:jsonb"`
 }
 
 type AINutrition struct {
 	Calories   float64 `json:"calories"`
-	Protein    float64 `json:"protein"`    // in grams
-	Carbs      float64 `json:"carbs"`      // in grams
-	Fat        float64 `json:"fat"`        // in grams
-	Sugar      float64 `json:"sugar"`      // in grams
-	Fiber      float64 `json:"fiber"`      // in grams
-	Sodium     float64 `json:"sodium"`     // in mg
-	Confidence float64 `json:"confidence"` // AI confidence level (0-1)
+	Protein    float64 `json:"protein"`
+	Carbs      float64 `json:"carbs"`
+	Fat        float64 `json:"fat"`
+	Sugar      float64 `json:"sugar"`
+	Fiber      float64 `json:"fiber"`
+	Sodium     float64 `json:"sodium"`
+	Confidence float64 `json:"confidence"`
+}
+
+type FoodAnalysis struct {
+	DetectedFoods  []DetectedFood `json:"detected_foods"`
+	TotalNutrition AINutrition    `json:"total_nutrition"`
+	AnalysisText   string         `json:"analysis_text"`
+	Confidence     float64        `json:"confidence"`
+}
+
+type DetectedFood struct {
+	Name        string      `json:"name"`
+	Portion     string      `json:"portion"`
+	Weight      float64     `json:"weight"`
+	Nutrition   AINutrition `json:"nutrition"`
+	Description string      `json:"description"`
 }
 
 type AIRecommendations struct {
@@ -49,20 +66,19 @@ type FoodJournalCreate struct {
 	Description    string `json:"description"`
 	FeelingBefore  string `json:"feeling_before"`
 	FeelingAfter   string `json:"feeling_after"`
+	InputType      string `json:"input_type"`
+	RawInput       string `json:"raw_input"`
+	ProcessedInput string `json:"processed_input"`
 	ImageURL       string `json:"image_url"`
-	VoiceURL       string `json:"voice_url"`
-	TranscriptText string `json:"transcript_text"`
 }
 
 type FoodJournalUpdate struct {
-	MealName       *string `json:"meal_name"`
-	MealType       *string `json:"meal_type"`
-	Description    *string `json:"description"`
-	FeelingBefore  *string `json:"feeling_before"`
-	FeelingAfter   *string `json:"feeling_after"`
-	ImageURL       *string `json:"image_url"`
-	VoiceURL       *string `json:"voice_url"`
-	TranscriptText *string `json:"transcript_text"`
+	MealName      *string `json:"meal_name"`
+	MealType      *string `json:"meal_type"`
+	Description   *string `json:"description"`
+	FeelingBefore *string `json:"feeling_before"`
+	FeelingAfter  *string `json:"feeling_after"`
+	ImageURL      *string `json:"image_url"`
 }
 
 type FoodJournalResponse struct {
@@ -73,12 +89,14 @@ type FoodJournalResponse struct {
 	Description       string            `json:"description"`
 	FeelingBefore     string            `json:"feeling_before"`
 	FeelingAfter      string            `json:"feeling_after"`
+	InputType         string            `json:"input_type"`
+	RawInput          string            `json:"raw_input"`
+	ProcessedInput    string            `json:"processed_input"`
 	ImageURL          string            `json:"image_url"`
-	VoiceURL          string            `json:"voice_url"`
-	TranscriptText    string            `json:"transcript_text"`
 	AINutrition       AINutrition       `json:"ai_nutrition"`
 	AIFeedback        string            `json:"ai_feedback"`
 	AIRecommendations AIRecommendations `json:"ai_recommendations"`
+	FoodAnalysis      *FoodAnalysis     `json:"food_analysis"`
 }
 
 func (fj *FoodJournal) BeforeCreate(tx *gorm.DB) (err error) {

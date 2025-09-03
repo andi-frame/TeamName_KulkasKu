@@ -8,7 +8,6 @@ import (
 	"github.com/andi-frame/TeamName_KulkasKu/backend/config"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/controller"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/database"
-	"github.com/andi-frame/TeamName_KulkasKu/backend/repository"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/routes"
 	"github.com/andi-frame/TeamName_KulkasKu/backend/service"
 	"github.com/gin-contrib/cors"
@@ -41,25 +40,25 @@ func (s *Server) RegisterRoutes() http.Handler {
 		log.Fatalf("Failed to create Gemini service: %v", err)
 	}
 	recipeService := service.NewRecipeService(geminiService, database.DB)
+	activityService := service.NewActivityService()
 
 	// Controllers
+	predictionController := controller.NewPredictionController(geminiService)
 	recipeController := controller.NewRecipeController(recipeService)
+	activityController := controller.NewActivityController(activityService)
+	itemController := controller.NewItemController(recipeService)
 
 	// Routes
 	routes.AuthRoute(r, cfg)
-	routes.PredictionRoute(r, cfg)
+	routes.PredictionRoute(r, predictionController)
 	routes.ProductRoute(r, cfg)
 	routes.ReceiptRoute(r, geminiService)
 	routes.RecipeRoute(r, recipeController)
-	routes.ItemRoute(r, cfg)
+	routes.ItemRoute(r, itemController)
 	routes.CartRoute(r, cfg)
 	routes.UserPreferenceRoute(r)
-
-	// Food Journal route setup
-	foodJournalRepository := repository.NewFoodJournalRepository(database.DB)
-	foodJournalService := service.NewFoodJournalService(foodJournalRepository, geminiService)
-	foodJournalController := controller.NewFoodJournalController(foodJournalService)
-	routes.FoodJournalRoutes(r, foodJournalController)
+	routes.ActivityRoute(r, activityController)
+	routes.FoodJournalRoutes(r, cfg)
 
 	return r
 }
