@@ -41,9 +41,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 		log.Fatalf("Failed to create Gemini service: %v", err)
 	}
 	recipeService := service.NewRecipeService(geminiService, database.DB)
+	activityService := service.NewActivityService()
 
 	// Controllers
 	recipeController := controller.NewRecipeController(recipeService)
+	activityController := controller.NewActivityController(activityService)
 
 	// Routes
 	routes.AuthRoute(r, cfg)
@@ -54,6 +56,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.ItemRoute(r, cfg)
 	routes.CartRoute(r, cfg)
 	routes.UserPreferenceRoute(r)
+	routes.ActivityRoute(r, activityController)
 
 	// Food Journal route setup
 	foodJournalRepository := repository.NewFoodJournalRepository(database.DB)

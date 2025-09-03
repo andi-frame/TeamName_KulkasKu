@@ -1,19 +1,24 @@
+"use client";
+
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Navbar } from "@/components/navbar";
 import { SidebarDesktop } from "@/components/sidebar";
 import { ReactNode } from "react";
 
 export default function MainPageLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex">
-      <SidebarDesktop />
+    <AuthGuard>
+      <div className="flex">
+        <SidebarDesktop />
 
-      <main className="flex-1 md:ml-20"> 
-        {children}
-      </main>
+        <main className="flex-1 md:ml-20"> 
+          {children}
+        </main>
 
-      <div className="md:hidden">
-        <Navbar />
+        <div className="md:hidden">
+          <Navbar />
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
