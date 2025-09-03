@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -11,6 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+type ItemController struct {
+	recipeService *service.RecipeService
+}
+
+func NewItemController(recipeService *service.RecipeService) *ItemController {
+	return &ItemController{
+		recipeService: recipeService,
+	}
+}
 
 type ItemRequest struct {
 	ID         string  `json:"id"`
@@ -23,7 +34,7 @@ type ItemRequest struct {
 	ExpDate    string  `json:"expDate"`   // format: yyyy-mm-dd
 }
 
-func GetAllItemHandler(c *gin.Context) {
+func (ctrl *ItemController) GetAllItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -43,7 +54,7 @@ func GetAllItemHandler(c *gin.Context) {
 	})
 }
 
-func GetAllExpiredItemHandler(c *gin.Context) {
+func (ctrl *ItemController) GetAllExpiredItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -63,7 +74,7 @@ func GetAllExpiredItemHandler(c *gin.Context) {
 	})
 }
 
-func GetSearchedExpiredItemHandler(c *gin.Context) {
+func (ctrl *ItemController) GetSearchedExpiredItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -107,7 +118,7 @@ func GetSearchedExpiredItemHandler(c *gin.Context) {
 	})
 }
 
-func GetAllFreshItemHandler(c *gin.Context) {
+func (ctrl *ItemController) GetAllFreshItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -127,7 +138,7 @@ func GetAllFreshItemHandler(c *gin.Context) {
 	})
 }
 
-func GetSearchedFreshItemHandler(c *gin.Context) {
+func (ctrl *ItemController) GetSearchedFreshItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -171,7 +182,7 @@ func GetSearchedFreshItemHandler(c *gin.Context) {
 	})
 }
 
-func CreateNewItemHandler(c *gin.Context) {
+func (ctrl *ItemController) CreateNewItemHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -206,10 +217,17 @@ func CreateNewItemHandler(c *gin.Context) {
 		return
 	}
 
+	// Trigger recipe generation in the background
+	go func() {
+		if err := ctrl.recipeService.GenerateAndSaveRecipes(userID); err != nil {
+			log.Printf("Error generating recipes for user %s: %v", userID, err)
+		}
+	}()
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Item created successfully"})
 }
 
-func UpdateItemHandler(c *gin.Context) {
+func (ctrl *ItemController) UpdateItemHandler(c *gin.Context) {
 	var req ItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -254,7 +272,7 @@ func UpdateItemHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Item updated successfully"})
 }
 
-func DeleteItemHandler(c *gin.Context) {
+func (ctrl *ItemController) DeleteItemHandler(c *gin.Context) {
 	itemID := c.Param("id")
 	err := service.DeleteItem(itemID)
 	if err != nil {

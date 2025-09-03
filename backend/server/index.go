@@ -46,6 +46,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	predictionController := controller.NewPredictionController(geminiService)
 	recipeController := controller.NewRecipeController(recipeService)
 	activityController := controller.NewActivityController(activityService)
+	itemController := controller.NewItemController(recipeService)
 
 	// Routes
 	routes.AuthRoute(r, cfg)
@@ -53,7 +54,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	routes.ProductRoute(r, cfg)
 	routes.ReceiptRoute(r, geminiService)
 	routes.RecipeRoute(r, recipeController)
-	routes.ItemRoute(r, cfg)
+	routes.ItemRoute(r, itemController)
 	routes.CartRoute(r, cfg)
 	routes.UserPreferenceRoute(r)
 	routes.ActivityRoute(r, activityController)
