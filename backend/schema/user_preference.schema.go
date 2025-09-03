@@ -34,10 +34,7 @@ type UserPreference struct {
 	FridgeModel    string
 
 	// Relationships for array fields
-	PreferredTags        []UserPreferenceTag
-	PreferredCategories  []UserPreferenceCategory
-	PreferredIngredients []UserPreferenceIngredient
-	DislikedIngredients  []UserDislikedIngredient
+	PreferredTags []UserPreferenceTag `gorm:"foreignKey:UserPreferenceID"`
 }
 
 // UserPreferenceTag for preferred tags
@@ -45,27 +42,6 @@ type UserPreferenceTag struct {
 	BaseModel
 	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
 	Tag              string    `gorm:"index;size:100"`
-}
-
-// UserPreferenceCategory for preferred categories
-type UserPreferenceCategory struct {
-	BaseModel
-	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
-	Category         string    `gorm:"index;size:100"`
-}
-
-// UserPreferenceIngredient for preferred ingredients
-type UserPreferenceIngredient struct {
-	BaseModel
-	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
-	Ingredient       string    `gorm:"index;size:100"`
-}
-
-// UserDislikedIngredient for disliked ingredients
-type UserDislikedIngredient struct {
-	BaseModel
-	UserPreferenceID uuid.UUID `gorm:"type:uuid;index"`
-	Ingredient       string    `gorm:"index;size:100"`
 }
 
 // UserActivity tracks all user interactions with recipes
@@ -76,18 +52,15 @@ type UserActivity struct {
 	User      User      `gorm:"foreignKey:UserID;references:ID"`
 
 	RecipeID     string `gorm:"index"`
-	RecipeTitle  string
-	RecipeSlug   string
 	ActivityType string `gorm:"index"`
 	ViewDuration int    `gorm:"default:0"`
 
 	// Recipe snapshot fields
-	RecipeCategory string
-	CookingTime    int
-	Calories       string
-	Price          int
-	ServingSize    int
-	SessionID      string `gorm:"index"`
+	CookingTime int
+	Calories    string
+	Price       int
+	ServingSize int
+	SessionID   string `gorm:"index"`
 
 	// Relationship for tags
 	RecipeTags []UserActivityRecipeTag

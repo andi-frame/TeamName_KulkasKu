@@ -70,9 +70,9 @@ func (authService *AuthService) MeHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":             claims["id"],
-		"email":          claims["email"],
-		"name":           claims["name"],
+		"id":            claims["id"],
+		"email":         claims["email"],
+		"name":          claims["name"],
 		"has_onboarded": user.HasOnboarded,
 	})
 }
@@ -94,9 +94,6 @@ func GetUserProfile(c *gin.Context) {
 	// Fetch user preference
 	var preference schema.UserPreference
 	if err := database.DB.Preload("PreferredTags").
-		Preload("PreferredCategories").
-		Preload("PreferredIngredients").
-		Preload("DislikedIngredients").
 		Where("user_id = ?", userID).First(&preference).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"profile":     user,
