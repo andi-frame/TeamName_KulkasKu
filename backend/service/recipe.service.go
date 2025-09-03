@@ -141,6 +141,7 @@ func (s *RecipeService) createRecipePrompt(items []schema.Item, pref *schema.Use
 	    "description": "Deskripsi singkat dan menarik tentang resep ini.",
 		"health_analysis": "Analisis mengapa resep ini baik untuk pengguna berdasarkan data onboarding dan kebutuhan gizi mereka. Jelaskan secara singkat dan jelas.",
 	    "rating": 4.7,
+		"price": 20000,
 	    "cooking_time": 25,
 	    "serving_min": 2,
 	    "serving_max": 4,
