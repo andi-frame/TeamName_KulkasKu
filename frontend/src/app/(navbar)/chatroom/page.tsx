@@ -45,6 +45,7 @@ export default function ChatPage() {
       const aiMsg: Msg = { id: crypto.randomUUID(), role: "assistant", content: aiText };
       setMessages((m) => [...m, aiMsg]);
     } catch (err) {
+      console.log(err);
       const errMsg: Msg = {
         id: crypto.randomUUID(),
         role: "assistant",

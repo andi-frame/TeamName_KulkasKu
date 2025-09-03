@@ -20,6 +20,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
         }
       } catch (error) {
+        console.log(error);
         router.push('/auth');
       }
     };

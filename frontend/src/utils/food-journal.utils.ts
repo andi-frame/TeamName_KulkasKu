@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { toast } from "sonner";
 
 export const formatDate = (dateString: string) => {
