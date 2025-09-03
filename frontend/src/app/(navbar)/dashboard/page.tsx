@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, Clock, AlertTriangle, Plus } from "lucide-react";
-import Link from "next/link";
+import { BarChart3, Clock, AlertTriangle } from "lucide-react";
 
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -19,14 +18,12 @@ interface NutritionData {
   sugar: number;
 }
 
-interface FoodItem {
-  id: string;
-  name: string;
-  expiryDate: string;
-  daysLeft: number;
+interface SuggestedMenu {
+  menu: string;
+  reason: string;
 }
 
-interface FoodHistory {
+interface RecentMeal {
   id: string;
   name: string;
   date: string;
@@ -43,13 +40,10 @@ export default function Dashboard() {
   });
 
   const [ingredients, setIngredients] = useState<Item[]>([]);
-  const [recentMeals, setRecentMeals] = useState<FoodHistory[]>([]);
-  const [suggestedMenus, setSuggestedMenus] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [recentMeals, setRecentMeals] = useState<RecentMeal[]>([]);
+  const [suggestedMenus, setSuggestedMenus] = useState<SuggestedMenu[]>([]);
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setIsLoading(true);
       try {
         // Fetch fresh items
         const itemsResponse = await api.get("/item/fresh");
@@ -72,18 +66,20 @@ export default function Dashboard() {
 
         // Update recent meals
         if (dashboardData.recent_meals) {
-          const formattedMeals = dashboardData.recent_meals.map((meal: any) => ({
-            id: meal.id,
-            name: meal.meal_name,
-            date: new Date(meal.created_at).toLocaleDateString(),
-            nutrition: {
-              protein: meal.ai_nutrition?.protein || 0,
-              calories: meal.ai_nutrition?.calories || 0,
-              fat: meal.ai_nutrition?.fat || 0,
-              carbs: meal.ai_nutrition?.carbs || 0,
-              sugar: meal.ai_nutrition?.sugar || 0,
-            },
-          }));
+          const formattedMeals = dashboardData.recent_meals.map(
+            (meal: { id: string; meal_name: string; created_at: string; ai_nutrition?: NutritionData }) => ({
+              id: meal.id,
+              name: meal.meal_name,
+              date: new Date(meal.created_at).toLocaleDateString(),
+              nutrition: {
+                protein: meal.ai_nutrition?.protein || 0,
+                calories: meal.ai_nutrition?.calories || 0,
+                fat: meal.ai_nutrition?.fat || 0,
+                carbs: meal.ai_nutrition?.carbs || 0,
+                sugar: meal.ai_nutrition?.sugar || 0,
+              },
+            })
+          );
           setRecentMeals(formattedMeals);
         }
 
@@ -101,31 +97,41 @@ export default function Dashboard() {
           carbs: 225,
           sugar: 38,
         });
-        setSuggestedMenus(["Chicken Stir Fry with Vegetables", "Greek Yogurt Parfait", "Quinoa Buddha Bowl"]);
-      } finally {
-        setIsLoading(false);
+        setSuggestedMenus([
+          { menu: "Chicken Stir Fry with Vegetables", reason: "High protein and vitamins from vegetables" },
+          { menu: "Greek Yogurt Parfait", reason: "Good source of protein and probiotics" },
+          { menu: "Quinoa Buddha Bowl", reason: "Complete protein and fiber from quinoa" },
+        ]);
       }
     };
 
     fetchDashboardData();
   }, []);
 
-  const [expiringItems, setExpiringItems] = useState<FoodItem[]>([
+  const expiringItems = [
     { id: "1", name: "Milk", expiryDate: "2025-01-15", daysLeft: 2 },
     { id: "2", name: "Chicken Breast", expiryDate: "2025-01-16", daysLeft: 3 },
     { id: "3", name: "Yogurt", expiryDate: "2025-01-14", daysLeft: 1 },
-  ]);
+  ];
 
   const nutritionTargets = {
-    protein: 50,
-    calories: 2000,
-    fat: 70,
-    carbs: 250,
-    sugar: 50,
+    protein: 50, // 50g
+    calories: 2000, // 2000 kcal
+    fat: 70, // 70g
+    carbs: 250, // 250g
+    sugar: 50, // 50g
   };
 
   const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
+    if (target === 0) return 0;
+    return (current / target) * 100; // Remove the cap to show actual percentage
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage <= 50) return "#3B82F6"; // Blue - under target
+    if (percentage <= 100) return "#10B981"; // Green - near target
+    if (percentage <= 150) return "#F59E0B"; // Yellow - over target
+    return "#EF4444"; // Red - way over target
   };
 
   const [isIngredientsPanelOpen, setIsIngredientsPanelOpen] = useState<boolean>(false);
@@ -159,37 +165,47 @@ export default function Dashboard() {
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <BarChart3 className="h-5 w-5 text-[#50A2FF]" />
-                  <h2 className="text-xl font-semibold">Today's Nutrition</h2>
+                  <h2 className="text-xl font-semibold">Today&apos;s Nutrition</h2>
                 </div>
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={Object.entries(nutrition).map(([key, value]) => ({
-                        name: key.charAt(0).toUpperCase() + key.slice(1),
-                        current: getProgressPercentage(value, nutritionTargets[key as keyof NutritionData]),
-                        target: 100,
-                        actualCurrent: value,
-                        actualTarget: nutritionTargets[key as keyof NutritionData],
-                      }))}>
+                      data={Object.entries(nutrition).map(([key, value]) => {
+                        const target = nutritionTargets[key as keyof NutritionData];
+                        const percentage = getProgressPercentage(value, target);
+                        return {
+                          name: key.charAt(0).toUpperCase() + key.slice(1),
+                          current: Math.min(percentage, 200), // Cap display at 200% for chart readability
+                          target: 100,
+                          actualCurrent: value,
+                          actualTarget: target,
+                          actualPercentage: percentage,
+                          color: getProgressColor(percentage),
+                        };
+                      })}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
-                      <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                      <YAxis domain={[0, 200]} tickFormatter={(value) => `${value}%`} />
                       <Tooltip
-                        formatter={(value: number, name: string, props: any) => {
-                          if (name === "current") {
-                            return [
-                              `${props.payload.actualCurrent}${
-                                props.payload.actualCurrent === nutrition.calories ? " kcal" : " g"
-                              } (${value.toFixed(1)}%)`,
-                              "Current",
-                            ];
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const unit = data.actualCurrent === nutrition.calories ? " kcal" : " g";
+                            return (
+                              <div className="bg-white p-3 border rounded shadow">
+                                <p className="font-medium">{label}</p>
+                                <p className="text-blue-600">
+                                  Current: {data.actualCurrent}
+                                  {unit} ({data.actualPercentage.toFixed(1)}%)
+                                </p>
+                                <p className="text-gray-600">
+                                  Target: {data.actualTarget}
+                                  {unit} (100%)
+                                </p>
+                              </div>
+                            );
                           }
-                          return [
-                            `${props.payload.actualTarget}${
-                              props.payload.actualTarget === nutritionTargets.calories ? " kcal" : " g"
-                            }`,
-                            "Target",
-                          ];
+                          return null;
                         }}
                       />
                       <Legend />
@@ -273,10 +289,10 @@ export default function Dashboard() {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4">Suggested Menus</h2>
               <div className="space-y-3">
-                {suggestedMenus.map((menu, index) => (
+                {suggestedMenus.map((suggestion, index) => (
                   <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                    <p className="font-medium text-gray-900">{menu}</p>
-                    <p className="text-sm text-gray-600">Based on your available ingredients</p>
+                    <p className="font-medium text-gray-900">{suggestion.menu}</p>
+                    <p className="text-sm text-gray-600">{suggestion.reason}</p>
                   </div>
                 ))}
               </div>

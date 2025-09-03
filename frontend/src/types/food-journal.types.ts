@@ -1,32 +1,32 @@
 export interface AINutrition {
-  Calories: number;
-  Protein: number;
-  Carbs: number;
-  Fat: number;
-  Sugar: number;
-  Fiber: number;
-  Sodium: number;
-  Confidence: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  sugar: number;
+  fiber: number;
+  sodium: number;
+  confidence: number;
 }
 
 export interface AIRecommendations {
-  NextMealSuggestion: string;
-  NutritionTips: string;
-  MotivationalMessage: string;
+  next_meal_suggestion: string;
+  nutrition_tips: string;
+  motivational_message: string;
 }
 
 export interface FoodJournal {
-  ID: string;
-  CreatedAt: string;
-  MealName: string;
-  MealType: string;
-  Description: string;
-  FeelingBefore: string;
-  FeelingAfter: string;
-  ImageURL: string;
-  VoiceURL: string;
-  TranscriptText: string;
-  AINutrition: AINutrition;
-  AIFeedback: string;
-  AIRecommendations: AIRecommendations;
+  id: string; // Changed from ID to id to match backend response
+  created_at: string;
+  meal_name: string;
+  meal_type: string;
+  description: string;
+  feeling_before: string;
+  feeling_after: string;
+  input_type: string;
+  raw_input: string;
+  processed_input: string;
+  ai_nutrition: AINutrition;
+  ai_feedback: string;
+  ai_recommendations: AIRecommendations;
 }
