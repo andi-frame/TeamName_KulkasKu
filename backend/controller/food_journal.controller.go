@@ -67,6 +67,11 @@ func GetFoodJournalDashboardHandler(c *gin.Context) {
 	}
 
 	userData := user.(middleware.JWTUserData)
+	userID, err := uuid.Parse(userData.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
 	todayJournals, err := repository.GetTodayFoodJournalByUserID(userData.ID)
 	if err != nil {
@@ -102,384 +107,380 @@ func GetFoodJournalDashboardHandler(c *gin.Context) {
 		})
 	}
 
-	suggestions, err := generateAIMealSuggestions(userData.ID, todayNutrition, todayJournals)
+	recipes, err := repository.GetGeneratedRecipesByUserID(userID)
 	if err != nil {
-		suggestions = generateBasicMealSuggestions(todayNutrition, todayJournals)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve recipes: " + err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"today_nutrition":       todayNutrition,
 			"recent_meals":          recentMeals,
-			"next_meal_suggestions": suggestions,
+			"next_meal_suggestions": recipes,
 			"total_meals_today":     len(todayJournals),
 		},
 	})
 }
 
-func generateAIMealSuggestions(userID string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) ([]gin.H, error) {
-	context := buildMealSuggestionContext(currentNutrition, todayMeals, userID)
+// func generateAIMealSuggestions(userID string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) ([]gin.H, error) {
+// 	context := buildMealSuggestionContext(currentNutrition, todayMeals, userID)
 
-	geminiService, err := service.NewGeminiService()
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize AI service: %w", err)
-	}
+// 	geminiService, err := service.NewGeminiService()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to initialize AI service: %w", err)
+// 	}
 
-	prompt := fmt.Sprintf(`
-		Berdasarkan data nutrisi dan makanan hari ini, berikan 4-5 saran menu makanan sehat yang spesifik:
+// 	prompt := fmt.Sprintf(`
+// 		Berdasarkan data nutrisi dan makanan hari ini, berikan 4-5 saran menu makanan sehat yang spesifik:
 		
-		%s
+// 		%s
 		
-		Berikan saran dalam format JSON dengan struktur:
-		{
-			"menu": "nama menu lengkap",
-			"reason": "alasan mengapa menu ini disarankan"
-		}
+// 		Berikan saran dalam format JSON dengan struktur:
+// 		{
+// 			"menu": "nama menu lengkap",
+// 			"reason": "alasan mengapa menu ini disarankan"
+// 		}
 		
-		Fokus pada:
-		1. Nama menu makanan yang konkret dan realistis (bisa Indonesia, Asia, atau internasional)
-		2. Alasan yang personal berdasarkan nutrisi yang kurang atau waktu makan yang belum diisi
-		3. Sehat, bergizi seimbang, dan mudah ditemukan/dibuat
-		4. Variasi jenis makanan (sarapan, makan utama, camilan sehat)
+// 		Fokus pada:
+// 		1. Nama menu makanan yang konkret dan realistis (bisa Indonesia, Asia, atau internasional)
+// 		2. Alasan yang personal berdasarkan nutrisi yang kurang atau waktu makan yang belum diisi
+// 		3. Sehat, bergizi seimbang, dan mudah ditemukan/dibuat
+// 		4. Variasi jenis makanan (sarapan, makan utama, camilan sehat)
 		
-		Contoh format yang baik:
-		- "Salad quinoa dengan ayam grilled dan alpukat"
-		- "Smoothie bowl dengan buah-buahan dan granola"
-		- "Sup miso dengan tahu dan sayuran"
-		- "Pasta whole wheat dengan salmon dan brokoli"
+// 		Contoh format yang baik:
+// 		- "Salad quinoa dengan ayam grilled dan alpukat"
+// 		- "Smoothie bowl dengan buah-buahan dan granola"
+// 		- "Sup miso dengan tahu dan sayuran"
+// 		- "Pasta whole wheat dengan salmon dan brokoli"
 		
-		Format respons: berikan daftar menu yang mudah dipahami, satu per baris.
-	`, context)
+// 		Format respons: berikan daftar menu yang mudah dipahami, satu per baris.
+// 	`, context)
 
-	analysis, err := geminiService.AnalyzeFoodFromText(prompt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate AI suggestions: %w", err)
-	}
+// 	analysis, err := geminiService.AnalyzeFoodFromText(prompt)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to generate AI suggestions: %w", err)
+// 	}
 
-	suggestions := parseEnhancedMealSuggestions(analysis.AnalysisText, currentNutrition, todayMeals)
+// 	suggestions := parseEnhancedMealSuggestions(analysis.AnalysisText, currentNutrition, todayMeals)
 
-	return suggestions, nil
-}
+// 	return suggestions, nil
+// }
 
-func generateBasicMealSuggestions(currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) []gin.H {
-	suggestions := []gin.H{}
+// func generateBasicMealSuggestions(currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) []gin.H {
+// 	suggestions := []gin.H{}
 
-	mealTypes := map[string]bool{
-		"breakfast": false,
-		"lunch":     false,
-		"dinner":    false,
-	}
+// 	mealTypes := map[string]bool{
+// 		"breakfast": false,
+// 		"lunch":     false,
+// 		"dinner":    false,
+// 	}
 
-	for _, meal := range todayMeals {
-		mealTypes[meal.MealType] = true
-	}
+// 	for _, meal := range todayMeals {
+// 		mealTypes[meal.MealType] = true
+// 	}
 
-	if !mealTypes["breakfast"] {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Nasi uduk dengan ayam goreng dan sambal",
-			"reason": "Sarapan bergizi untuk memulai hari dengan energi",
-		})
-	}
-	if !mealTypes["lunch"] {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Nasi putih dengan rendang dan sayur lodeh",
-			"reason": "Makan siang seimbang dengan protein dan sayuran",
-		})
-	}
-	if !mealTypes["dinner"] {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Sup ikan dengan nasi putih dan tumis kangkung",
-			"reason": "Makan malam ringan namun bergizi",
-		})
-	}
+// 	if !mealTypes["breakfast"] {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Nasi uduk dengan ayam goreng dan sambal",
+// 			"reason": "Sarapan bergizi untuk memulai hari dengan energi",
+// 		})
+// 	}
+// 	if !mealTypes["lunch"] {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Nasi putih dengan rendang dan sayur lodeh",
+// 			"reason": "Makan siang seimbang dengan protein dan sayuran",
+// 		})
+// 	}
+// 	if !mealTypes["dinner"] {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Sup ikan dengan nasi putih dan tumis kangkung",
+// 			"reason": "Makan malam ringan namun bergizi",
+// 		})
+// 	}
 
-	// Add nutrition-specific suggestions
-	if currentNutrition.Protein < 50 {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Soto ayam dengan nasi putih dan telur",
-			"reason": fmt.Sprintf("Menambah protein (saat ini %.1fg dari target 50g)", currentNutrition.Protein),
-		})
-	}
-	if currentNutrition.Fiber < 25 {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Gado-gado dengan lontong dan kerupuk",
-			"reason": fmt.Sprintf("Menambah serat dari sayuran (saat ini %.1fg dari target 25g)", currentNutrition.Fiber),
-		})
-	}
+// 	// Add nutrition-specific suggestions
+// 	if currentNutrition.Protein < 50 {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Soto ayam dengan nasi putih dan telur",
+// 			"reason": fmt.Sprintf("Menambah protein (saat ini %.1fg dari target 50g)", currentNutrition.Protein),
+// 		})
+// 	}
+// 	if currentNutrition.Fiber < 25 {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Gado-gado dengan lontong dan kerupuk",
+// 			"reason": fmt.Sprintf("Menambah serat dari sayuran (saat ini %.1fg dari target 25g)", currentNutrition.Fiber),
+// 		})
+// 	}
 
-	// Limit to 4 suggestions
-	if len(suggestions) > 4 {
-		suggestions = suggestions[:4]
-	}
+// 	// Limit to 4 suggestions
+// 	if len(suggestions) > 4 {
+// 		suggestions = suggestions[:4]
+// 	}
 
-	if len(suggestions) == 0 {
-		suggestions = append(suggestions, gin.H{
-			"menu":   "Nasi campur dengan lauk seimbang",
-			"reason": "Menu seimbang untuk melengkapi nutrisi harian",
-		})
-	}
+// 	if len(suggestions) == 0 {
+// 		suggestions = append(suggestions, gin.H{
+// 			"menu":   "Nasi campur dengan lauk seimbang",
+// 			"reason": "Menu seimbang untuk melengkapi nutrisi harian",
+// 		})
+// 	}
 
-	return suggestions
-}
+// 	return suggestions
+// }
 
-func buildMealSuggestionContext(currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal, userID string) string {
-	var context strings.Builder
+// func buildMealSuggestionContext(currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal, userID string) string {
+// 	var context strings.Builder
 
-	context.WriteString(fmt.Sprintf("Nutrisi hari ini:\n"))
-	context.WriteString(fmt.Sprintf("- Kalori: %.0f kcal\n", currentNutrition.Calories))
-	context.WriteString(fmt.Sprintf("- Protein: %.0f g\n", currentNutrition.Protein))
-	context.WriteString(fmt.Sprintf("- Karbohidrat: %.0f g\n", currentNutrition.Carbs))
-	context.WriteString(fmt.Sprintf("- Lemak: %.0f g\n", currentNutrition.Fat))
-	context.WriteString(fmt.Sprintf("- Serat: %.0f g\n", currentNutrition.Fiber))
-	context.WriteString(fmt.Sprintf("- Gula: %.0f g\n", currentNutrition.Sugar))
+// 	context.WriteString(fmt.Sprintf("Nutrisi hari ini:\n"))
+// 	context.WriteString(fmt.Sprintf("- Kalori: %.0f kcal\n", currentNutrition.Calories))
+// 	context.WriteString(fmt.Sprintf("- Protein: %.0f g\n", currentNutrition.Protein))
+// 	context.WriteString(fmt.Sprintf("- Karbohidrat: %.0f g\n", currentNutrition.Carbs))
+// 	context.WriteString(fmt.Sprintf("- Lemak: %.0f g\n", currentNutrition.Fat))
+// 	context.WriteString(fmt.Sprintf("- Serat: %.0f g\n", currentNutrition.Fiber))
+// 	context.WriteString(fmt.Sprintf("- Gula: %.0f g\n", currentNutrition.Sugar))
 
-	mealTypes := map[string]bool{
-		"breakfast": false,
-		"lunch":     false,
-		"dinner":    false,
-		"snack":     false,
-	}
+// 	mealTypes := map[string]bool{
+// 		"breakfast": false,
+// 		"lunch":     false,
+// 		"dinner":    false,
+// 		"snack":     false,
+// 	}
 
-	context.WriteString(fmt.Sprintf("\nMakanan yang sudah dimakan hari ini:\n"))
-	for _, meal := range todayMeals {
-		mealTypes[meal.MealType] = true
-		context.WriteString(fmt.Sprintf("- %s (%s): %s\n",
-			translateMealType(meal.MealType),
-			meal.CreatedAt.Format("15:04"),
-			meal.MealName))
-	}
+// 	context.WriteString(fmt.Sprintf("\nMakanan yang sudah dimakan hari ini:\n"))
+// 	for _, meal := range todayMeals {
+// 		mealTypes[meal.MealType] = true
+// 		context.WriteString(fmt.Sprintf("- %s (%s): %s\n",
+// 			translateMealType(meal.MealType),
+// 			meal.CreatedAt.Format("15:04"),
+// 			meal.MealName))
+// 	}
 
-	context.WriteString(fmt.Sprintf("\nWaktu makan yang belum diisi:\n"))
-	if !mealTypes["breakfast"] {
-		context.WriteString("- Sarapan\n")
-	}
-	if !mealTypes["lunch"] {
-		context.WriteString("- Makan Siang\n")
-	}
-	if !mealTypes["dinner"] {
-		context.WriteString("- Makan Malam\n")
-	}
+// 	context.WriteString(fmt.Sprintf("\nWaktu makan yang belum diisi:\n"))
+// 	if !mealTypes["breakfast"] {
+// 		context.WriteString("- Sarapan\n")
+// 	}
+// 	if !mealTypes["lunch"] {
+// 		context.WriteString("- Makan Siang\n")
+// 	}
+// 	if !mealTypes["dinner"] {
+// 		context.WriteString("- Makan Malam\n")
+// 	}
 
-	context.WriteString(fmt.Sprintf("\nKeterangan tambahan:\n"))
-	context.WriteString("- Target harian: Kalori 2000 kcal, Protein 50g, Serat 25g\n")
-	context.WriteString("- Preferensi: Makanan Indonesia yang sehat dan bergizi\n")
+// 	context.WriteString(fmt.Sprintf("\nKeterangan tambahan:\n"))
+// 	context.WriteString("- Target harian: Kalori 2000 kcal, Protein 50g, Serat 25g\n")
+// 	context.WriteString("- Preferensi: Makanan Indonesia yang sehat dan bergizi\n")
 
-	return context.String()
-}
+// 	return context.String()
+// }
 
-func translateMealType(mealType string) string {
-	switch mealType {
-	case "breakfast":
-		return "Sarapan"
-	case "lunch":
-		return "Makan Siang"
-	case "dinner":
-		return "Makan Malam"
-	case "snack":
-		return "Camilan"
-	default:
-		return mealType
-	}
-}
+// func translateMealType(mealType string) string {
+// 	switch mealType {
+// 	case "breakfast":
+// 		return "Sarapan"
+// 	case "lunch":
+// 		return "Makan Siang"
+// 	case "dinner":
+// 		return "Makan Malam"
+// 	case "snack":
+// 		return "Camilan"
+// 	default:
+// 		return mealType
+// 	}
+// }
 
-func parseEnhancedMealSuggestions(aiResponse string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) []gin.H {
-	suggestions := []gin.H{}
+// func parseEnhancedMealSuggestions(aiResponse string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) []gin.H {
+// 	suggestions := []gin.H{}
 
-	lines := strings.Split(aiResponse, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || len(line) < 10 {
-			continue
-		}
+// 	lines := strings.Split(aiResponse, "\n")
+// 	for _, line := range lines {
+// 		line = strings.TrimSpace(line)
+// 		if line == "" || len(line) < 10 {
+// 			continue
+// 		}
 
-		lowerLine := strings.ToLower(line)
-		if strings.Contains(lowerLine, "berdasarkan") ||
-			strings.Contains(lowerLine, "format") ||
-			strings.Contains(lowerLine, "saran") {
-			continue
-		}
+// 		lowerLine := strings.ToLower(line)
+// 		if strings.Contains(lowerLine, "berdasarkan") ||
+// 			strings.Contains(lowerLine, "format") ||
+// 			strings.Contains(lowerLine, "saran") {
+// 			continue
+// 		}
 
-		line = strings.TrimPrefix(line, "-")
-		line = strings.TrimPrefix(line, "*")
-		line = strings.TrimPrefix(line, "•")
-		line = strings.TrimSpace(line)
+// 		line = strings.TrimPrefix(line, "-")
+// 		line = strings.TrimPrefix(line, "*")
+// 		line = strings.TrimPrefix(line, "•")
+// 		line = strings.TrimSpace(line)
 
-		if strings.Contains(line, ".") && len(line) > 3 {
-			parts := strings.SplitN(line, ".", 2)
-			if len(parts) == 2 && len(strings.TrimSpace(parts[0])) <= 3 {
-				line = strings.TrimSpace(parts[1])
-			}
-		}
+// 		if strings.Contains(line, ".") && len(line) > 3 {
+// 			parts := strings.SplitN(line, ".", 2)
+// 			if len(parts) == 2 && len(strings.TrimSpace(parts[0])) <= 3 {
+// 				line = strings.TrimSpace(parts[1])
+// 			}
+// 		}
 
-		if isValidFoodSuggestion(line) {
-			reason := generateMenuReason(line, currentNutrition, todayMeals)
+// 		if isValidFoodSuggestion(line) {
+// 			reason := generateMenuReason(line, currentNutrition, todayMeals)
 
-			suggestions = append(suggestions, gin.H{
-				"menu":   line,
-				"reason": reason,
-			})
-		}
-	}
+// 			suggestions = append(suggestions, gin.H{
+// 				"menu":   line,
+// 				"reason": reason,
+// 			})
+// 		}
+// 	}
 
-	if len(suggestions) > 4 {
-		suggestions = suggestions[:4]
-	}
+// 	if len(suggestions) > 4 {
+// 		suggestions = suggestions[:4]
+// 	}
 
-	// Fallback if no suggestions parsed
-	if len(suggestions) == 0 {
-		return generateBasicMealSuggestions(currentNutrition, todayMeals)
-	}
+// 	return suggestions
+// }
 
-	return suggestions
-}
+// func isValidFoodSuggestion(text string) bool {
+// 	if len(text) < 10 || len(text) > 200 {
+// 		return false
+// 	}
 
-func isValidFoodSuggestion(text string) bool {
-	if len(text) < 10 || len(text) > 200 {
-		return false
-	}
+// 	lowerText := strings.ToLower(text)
 
-	lowerText := strings.ToLower(text)
+// 	foodKeywords := []string{
+// 		"nasi", "roti", "mie", "pasta", "quinoa", "oat", "sereal",
+// 		"ayam", "ikan", "daging", "telur", "tahu", "tempe", "protein", "kacang",
+// 		"sayur", "sayuran", "brokoli", "wortel", "bayam", "kangkung", "tomat",
+// 		"goreng", "rebus", "bakar", "tumis", "kukus", "panggang",
+// 		"sup", "sop", "salad", "jus", "smoothie", "bubur", "bakso", "rendang",
+// 		"dengan", "dan", "plus", "campur",
+// 	}
 
-	foodKeywords := []string{
-		"nasi", "roti", "mie", "pasta", "quinoa", "oat", "sereal",
-		"ayam", "ikan", "daging", "telur", "tahu", "tempe", "protein", "kacang",
-		"sayur", "sayuran", "brokoli", "wortel", "bayam", "kangkung", "tomat",
-		"goreng", "rebus", "bakar", "tumis", "kukus", "panggang",
-		"sup", "sop", "salad", "jus", "smoothie", "bubur", "bakso", "rendang",
-		"dengan", "dan", "plus", "campur",
-	}
+// 	hasKeyword := false
+// 	for _, keyword := range foodKeywords {
+// 		if strings.Contains(lowerText, keyword) {
+// 			hasKeyword = true
+// 			break
+// 		}
+// 	}
 
-	hasKeyword := false
-	for _, keyword := range foodKeywords {
-		if strings.Contains(lowerText, keyword) {
-			hasKeyword = true
-			break
-		}
-	}
+// 	if !hasKeyword {
+// 		return false
+// 	}
 
-	if !hasKeyword {
-		return false
-	}
+// 	excludeKeywords := []string{
+// 		"berdasarkan", "format", "saran", "rekomendasi", "contoh", "tips",
+// 		"catatan", "perhatian", "penting", "sebaiknya", "jangan", "hindari",
+// 		"json", "array", "struktur", "response", "data", "api",
+// 	}
 
-	excludeKeywords := []string{
-		"berdasarkan", "format", "saran", "rekomendasi", "contoh", "tips",
-		"catatan", "perhatian", "penting", "sebaiknya", "jangan", "hindari",
-		"json", "array", "struktur", "response", "data", "api",
-	}
+// 	for _, exclude := range excludeKeywords {
+// 		if strings.Contains(lowerText, exclude) {
+// 			return false
+// 		}
+// 	}
 
-	for _, exclude := range excludeKeywords {
-		if strings.Contains(lowerText, exclude) {
-			return false
-		}
-	}
+// 	return true
+// }
 
-	return true
-}
+// func generateMenuReason(menu string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) string {
+// 	menuLower := strings.ToLower(menu)
 
-func generateMenuReason(menu string, currentNutrition schema.AINutrition, todayMeals []schema.FoodJournal) string {
-	menuLower := strings.ToLower(menu)
+// 	mealTypes := map[string]bool{
+// 		"breakfast": false,
+// 		"lunch":     false,
+// 		"dinner":    false,
+// 	}
 
-	mealTypes := map[string]bool{
-		"breakfast": false,
-		"lunch":     false,
-		"dinner":    false,
-	}
+// 	for _, meal := range todayMeals {
+// 		mealTypes[meal.MealType] = true
+// 	}
 
-	for _, meal := range todayMeals {
-		mealTypes[meal.MealType] = true
-	}
+// 	if !mealTypes["breakfast"] && isBreakfastFood(menuLower) {
+// 		return "Sarapan bergizi untuk memulai hari dengan energi"
+// 	}
 
-	if !mealTypes["breakfast"] && isBreakfastFood(menuLower) {
-		return "Sarapan bergizi untuk memulai hari dengan energi"
-	}
+// 	if !mealTypes["lunch"] && isLunchFood(menuLower) {
+// 		return "Makan siang seimbang untuk energi siang hari"
+// 	}
 
-	if !mealTypes["lunch"] && isLunchFood(menuLower) {
-		return "Makan siang seimbang untuk energi siang hari"
-	}
+// 	if !mealTypes["dinner"] && isDinnerFood(menuLower) {
+// 		return "Makan malam ringan namun bergizi"
+// 	}
 
-	if !mealTypes["dinner"] && isDinnerFood(menuLower) {
-		return "Makan malam ringan namun bergizi"
-	}
+// 	if currentNutrition.Protein < 50 && isHighProteinFood(menuLower) {
+// 		return fmt.Sprintf("Menambah protein (saat ini %.1fg dari target 50g)", currentNutrition.Protein)
+// 	}
 
-	if currentNutrition.Protein < 50 && isHighProteinFood(menuLower) {
-		return fmt.Sprintf("Menambah protein (saat ini %.1fg dari target 50g)", currentNutrition.Protein)
-	}
+// 	if currentNutrition.Fiber < 25 && isHighFiberFood(menuLower) {
+// 		return fmt.Sprintf("Menambah serat dari sayuran (saat ini %.1fg dari target 25g)", currentNutrition.Fiber)
+// 	}
 
-	if currentNutrition.Fiber < 25 && isHighFiberFood(menuLower) {
-		return fmt.Sprintf("Menambah serat dari sayuran (saat ini %.1fg dari target 25g)", currentNutrition.Fiber)
-	}
+// 	if currentNutrition.Calories < 1500 && isHighCalorieFood(menuLower) {
+// 		return fmt.Sprintf("Menambah kalori harian (saat ini %.0f dari target 2000)", currentNutrition.Calories)
+// 	}
 
-	if currentNutrition.Calories < 1500 && isHighCalorieFood(menuLower) {
-		return fmt.Sprintf("Menambah kalori harian (saat ini %.0f dari target 2000)", currentNutrition.Calories)
-	}
+// 	if isHighFiberFood(menuLower) {
+// 		return "Kaya serat dan vitamin untuk pencernaan sehat"
+// 	}
 
-	if isHighFiberFood(menuLower) {
-		return "Kaya serat dan vitamin untuk pencernaan sehat"
-	}
+// 	if isHighProteinFood(menuLower) {
+// 		return "Sumber protein berkualitas tinggi untuk otot"
+// 	}
 
-	if isHighProteinFood(menuLower) {
-		return "Sumber protein berkualitas tinggi untuk otot"
-	}
+// 	if isCarbohydrateFood(menuLower) {
+// 		return "Karbohidrat untuk energi sehari-hari"
+// 	}
 
-	if isCarbohydrateFood(menuLower) {
-		return "Karbohidrat untuk energi sehari-hari"
-	}
+// 	if isLowCalorieFood(menuLower) {
+// 		return "Menu rendah kalori untuk menjaga berat badan"
+// 	}
 
-	if isLowCalorieFood(menuLower) {
-		return "Menu rendah kalori untuk menjaga berat badan"
-	}
+// 	return "Menu seimbang untuk melengkapi nutrisi harian"
+// }
 
-	return "Menu seimbang untuk melengkapi nutrisi harian"
-}
+// func isBreakfastFood(menuLower string) bool {
+// 	breakfastKeywords := []string{"bubur", "oat", "sereal", "roti", "pancake", "telur", "nasi uduk", "lontong"}
+// 	return containsAny(menuLower, breakfastKeywords)
+// }
 
-func isBreakfastFood(menuLower string) bool {
-	breakfastKeywords := []string{"bubur", "oat", "sereal", "roti", "pancake", "telur", "nasi uduk", "lontong"}
-	return containsAny(menuLower, breakfastKeywords)
-}
+// func isLunchFood(menuLower string) bool {
+// 	lunchKeywords := []string{"nasi", "mie", "pasta", "quinoa", "salad utama"}
+// 	return containsAny(menuLower, lunchKeywords)
+// }
 
-func isLunchFood(menuLower string) bool {
-	lunchKeywords := []string{"nasi", "mie", "pasta", "quinoa", "salad utama"}
-	return containsAny(menuLower, lunchKeywords)
-}
+// func isDinnerFood(menuLower string) bool {
+// 	dinnerKeywords := []string{"sup", "sop", "salad", "ringan", "kukus", "rebus"}
+// 	return containsAny(menuLower, dinnerKeywords)
+// }
 
-func isDinnerFood(menuLower string) bool {
-	dinnerKeywords := []string{"sup", "sop", "salad", "ringan", "kukus", "rebus"}
-	return containsAny(menuLower, dinnerKeywords)
-}
+// func isHighProteinFood(menuLower string) bool {
+// 	proteinKeywords := []string{"ayam", "ikan", "daging", "telur", "tahu", "tempe", "protein", "kacang", "udang", "cumi", "salmon"}
+// 	return containsAny(menuLower, proteinKeywords)
+// }
 
-func isHighProteinFood(menuLower string) bool {
-	proteinKeywords := []string{"ayam", "ikan", "daging", "telur", "tahu", "tempe", "protein", "kacang", "udang", "cumi", "salmon"}
-	return containsAny(menuLower, proteinKeywords)
-}
+// func isHighFiberFood(menuLower string) bool {
+// 	fiberKeywords := []string{"sayur", "sayuran", "gado", "salad", "brokoli", "bayam", "kangkung", "wortel", "oat", "quinoa"}
+// 	return containsAny(menuLower, fiberKeywords)
+// }
 
-func isHighFiberFood(menuLower string) bool {
-	fiberKeywords := []string{"sayur", "sayuran", "gado", "salad", "brokoli", "bayam", "kangkung", "wortel", "oat", "quinoa"}
-	return containsAny(menuLower, fiberKeywords)
-}
+// func isCarbohydrateFood(menuLower string) bool {
+// 	carbKeywords := []string{"nasi", "roti", "mie", "pasta", "kentang", "ubi", "jagung", "oat"}
+// 	return containsAny(menuLower, carbKeywords)
+// }
 
-func isCarbohydrateFood(menuLower string) bool {
-	carbKeywords := []string{"nasi", "roti", "mie", "pasta", "kentang", "ubi", "jagung", "oat"}
-	return containsAny(menuLower, carbKeywords)
-}
+// func isHighCalorieFood(menuLower string) bool {
+// 	highCalKeywords := []string{"goreng", "santan", "krim", "keju", "alpukat", "kacang", "minyak"}
+// 	return containsAny(menuLower, highCalKeywords)
+// }
 
-func isHighCalorieFood(menuLower string) bool {
-	highCalKeywords := []string{"goreng", "santan", "krim", "keju", "alpukat", "kacang", "minyak"}
-	return containsAny(menuLower, highCalKeywords)
-}
+// func isLowCalorieFood(menuLower string) bool {
+// 	lowCalKeywords := []string{"sup", "sop", "salad", "kukus", "rebus", "panggang tanpa minyak", "jus"}
+// 	return containsAny(menuLower, lowCalKeywords)
+// }
 
-func isLowCalorieFood(menuLower string) bool {
-	lowCalKeywords := []string{"sup", "sop", "salad", "kukus", "rebus", "panggang tanpa minyak", "jus"}
-	return containsAny(menuLower, lowCalKeywords)
-}
-
-func containsAny(text string, keywords []string) bool {
-	for _, keyword := range keywords {
-		if strings.Contains(text, keyword) {
-			return true
-		}
-	}
-	return false
-}
+// func containsAny(text string, keywords []string) bool {
+// 	for _, keyword := range keywords {
+// 		if strings.Contains(text, keyword) {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func GetAllFoodJournalHandler(c *gin.Context) {
 	user, exists := c.Get("user")
